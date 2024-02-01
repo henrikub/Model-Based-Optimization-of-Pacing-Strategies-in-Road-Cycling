@@ -3,7 +3,7 @@ from activity_reader import *
 import matplotlib.pyplot as plt
 
 #activity = ActivityReader("Canopies_and_coastlines_time_trial.tcx")
-activity = ActivityReader("Flat_is_fast_race.tcx")
+activity = ActivityReader("Greater_london_flat_race.tcx")
 activity.remove_unactive_period(100)
 
 def w_prime_balance_ode_fitted(power, cp, w_prime):
@@ -54,8 +54,8 @@ def w_prime_balance_bartram(power, cp, w_prime):
 
 
 
-cp = 261
-w_prime = 17800
+cp = 276
+w_prime = 13684
 
 w_bal_ode = w_prime_balance_ode(activity.power, cp, w_prime)
 w_bal_ode_fitted = w_prime_balance_ode_fitted(activity.power, cp, w_prime)
