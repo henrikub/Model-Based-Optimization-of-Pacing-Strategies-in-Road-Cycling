@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from activity_reader import *
 import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter1d
+from w_bal import *
 
 
 def bicycle_update(t, x, u, params={}):
@@ -37,14 +38,22 @@ def bicycle_update(t, x, u, params={}):
     rho = params.get('rho', 1.2)
     A = params.get('A', 0.4)
     eta = params.get('eta', 1)
+    w_prime = params.get('w_prime', 26630)
+    cp = params.get('cp', 265)
 
     # Variables for states and input
     v = x[1]
+    w_bal = x[2]
     power = u[0]
+    dw_bal = 0
+    if power < cp:
+        dw_bal = (1-w_bal/w_prime)*(cp-power)
+    else:
+        dw_bal = -(power - cp)
     
     dv = 1/v * 1/(m + Iw/r**2) * (eta*power - m*g*v*slope[int(t)] - my*m*g*v - b0*v - b1*v**2 - 0.5*Cd*rho*A*v**3)
     
-    return np.array([v, dv])
+    return np.array([v, dv, dw_bal])
 
 
 def bicycle_output(t, x, u, params):
@@ -71,7 +80,7 @@ smoothed_elev = gaussian_filter1d(activity.elevation, sigma)
 
 slope = calculate_gradient(activity.distance, smoothed_elev)
 
-bicycle_system = ct.NonlinearIOSystem(bicycle_update, bicycle_output, states=2, name='bicycle', inputs=('u'), outputs=('p', 'v'))
+bicycle_system = ct.NonlinearIOSystem(bicycle_update, bicycle_output, states=3, name='bicycle', inputs=('u'), outputs=('p', 'v', 'w_bal'))
 u = activity.power
 t = activity.time
 mass_rider = 78
@@ -92,7 +101,7 @@ params = {
 }
 
 
-response = ct.input_output_response(bicycle_system,  t, u, [0, 10.736], params)
+response = ct.input_output_response(bicycle_system,  t, u, [0, 11.11, 26630], params)
 t, y, u = response.time, response.outputs, response.inputs
 
 plt.plot(t, y[1]*3.6)
@@ -109,3 +118,11 @@ for i in range(len(activity.speed)):
 print(max(error)*3.6)
 print(sum(error))
 print(np.mean(error))
+
+
+w_bal_ode = w_prime_balance_ode(activity.power, 265, 26630)
+
+plt.plot(t, y[2])
+plt.plot(t, w_bal_ode)
+plt.legend(["Estimated w_bal", "Actual w_bal"])
+plt.show()
