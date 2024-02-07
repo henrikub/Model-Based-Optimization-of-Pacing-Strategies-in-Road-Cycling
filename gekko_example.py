@@ -35,7 +35,6 @@ m.Equation(x3*final<=0)
 m.Minimize(tf)
 
 m.options.IMODE = 6
-m.solver_options()
 m.solve()
 
 print('Final Time: ' + str(tf.value[0]))
