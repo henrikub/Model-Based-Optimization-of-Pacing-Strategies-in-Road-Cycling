@@ -4,17 +4,17 @@ import matplotlib.pyplot as plt
 
 m = GEKKO()
 
-nt = 1000
+nt = 501
 tm = np.linspace(0,1,nt)
 m.time = tm
 
 # Variables
 x1 = m.Var(value=0.0)
 x2 = m.Var(value=0.1)
-x3 = m.Var(value=26630.0)
+#x3 = m.Var(value=26630.0)
 
 p = np.zeros(nt)
-p[-1] = 265.0
+#p[-1] = 265.0
 final = m.Param(value=p)
 
 # FV (Fixed variable)
@@ -22,7 +22,7 @@ tf = m.FV(value=1.0,lb=0.1,ub=100.0)
 tf.STATUS = 1
 
 # MV (Manipulated variable)
-u = m.MV(lb=0,ub=800)
+u = m.MV(lb=0,ub=500)
 u.STATUS = 1
 
 # Parameters
@@ -48,11 +48,11 @@ cp = 265
 m.Equation(x1.dt()==x2*tf)
 #m.Equation(x2.dt()==(1/x2 * 1/(m + Iw/r**2) * (eta*u - m*g*x2*slope - my*m*g*x2 - b0*x2 - b1*x2**2 - 0.5*Cd*rho*A*x2**3))*tf)
 m.Equation(x2.dt()==(1/x2 * 1/(total_mass + Iw/r**2) * (eta*u - my*total_mass*g*x2 - b0*x2 - b1*x2**2 - 0.5*Cd*rho*A*x2**3))*tf) # Without any slope
-m.Equation(x3.dt() == m.if3(u - cp, ((1 - x3 / w_prime) * (cp - u))*tf, (-(u - cp)*tf)))
+#m.Equation(x3.dt() == m.if3(u - cp, ((1 - x3 / w_prime) * (cp - u))*tf, (-(u - cp)*tf)))
 
 
-# m.Equation(x1*final == 1000)
-m.Equation(x3*final <= 1500)
+#m.Equation(x1*final >= 1000)
+#m.Equation(x3 >= 0)
 
 
 m.Minimize(tf)
@@ -65,10 +65,12 @@ print('Final Time: ' + str(tf.value[0]))
 tm = tm * tf.value[0]
 print('After scaling: Final Time: ' + str(tf.value[0]))
 
+print(u.value)
+
 plt.figure(1)
 plt.plot(tm,x1.value,'k-',lw=2,label=r'$x_1$')
 plt.plot(tm,x2.value,'b-',lw=2,label=r'$x_2$')
-plt.plot(tm,x3.value,'g--',lw=2,label=r'$x_3$')
+#plt.plot(tm,x3.value,'g--',lw=2,label=r'$x_3$')
 plt.plot(tm,u.value,'r--',lw=2,label=r'$u$')
 plt.legend(loc='best')
 plt.xlabel('Time')

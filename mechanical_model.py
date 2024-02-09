@@ -1,6 +1,5 @@
 import numpy as np
 import control as ct 
-import control.optimal as obc
 import matplotlib.pyplot as plt
 from activity_reader import *
 import matplotlib.pyplot as plt
@@ -101,28 +100,36 @@ params = {
 }
 
 
-response = ct.input_output_response(bicycle_system,  t, u, [0, 11.11, 26630], params)
+response = ct.input_output_response(bicycle_system,  t, u, [0, activity.speed[0], 26630], params)
 t, y, u = response.time, response.outputs, response.inputs
 
-plt.plot(t, y[1]*3.6)
-plt.plot(t, [elem*3.6 for elem in activity.speed])
+def mse(array1, array2):
+    squared_sum = [(elem1-elem2)**2 for elem1,elem2 in zip(array1, array2)]
+    return np.mean(squared_sum)/len(squared_sum)
 
+print(mse(activity.speed, y[1]))
+
+plt.subplot(2,1,1)
+plt.plot(activity.distance, y[1]*3.6)
+plt.plot(activity.distance, [elem*3.6 for elem in activity.speed])
+# plt.plot(activity.distance, y[1])
+# plt.plot(activity.distance, activity.speed)
+plt.ylabel("Velocity [km/h]")
 plt.legend(["estimated velocity", "actual velocity"])
+
+plt.subplot(2,1,2)
+plt.plot(activity.distance, activity.elevation)
+plt.plot(activity.distance, smoothed_elev)
+plt.legend(['Elevation from TCX file', 'Smoothed elevation'])
+plt.ylabel("Elevation [m]")
+plt.xlabel("Distance [m]")
 plt.show()
 
 
-error = []
-for i in range(len(activity.speed)):
-    error.append(y[1][i] - activity.speed[i])
 
-print(max(error)*3.6)
-print(sum(error))
-print(np.mean(error))
+# w_bal_ode = w_prime_balance_ode(activity.power, 265, 26630)
 
-
-w_bal_ode = w_prime_balance_ode(activity.power, 265, 26630)
-
-plt.plot(t, y[2])
-plt.plot(t, w_bal_ode)
-plt.legend(["Estimated w_bal", "Actual w_bal"])
-plt.show()
+# plt.plot(t, y[2])
+# plt.plot(t, w_bal_ode)
+# plt.legend(["Estimated w_bal", "Actual w_bal"])
+# plt.show()
