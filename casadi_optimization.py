@@ -78,6 +78,7 @@ opti.subject_to(speed > 1)
 # Provide an initial guess for the solver
 opti.set_initial(T, 300)
 opti.set_initial(speed, 15)
+opti.set_initial(U, cp)
 
 p_opts = {"expand": True, "print_time": False}
 s_opts = {"print_level": 3, 
@@ -104,13 +105,13 @@ except RuntimeError:
 
 plt.subplot(3,1,1)
 plt.ylim(0,550)
-plt.plot(sol.value(U))
+plt.plot(sol.value(pos)[:-1], sol.value(U))
 
 plt.subplot(3,1,2)
 plt.ylim(0,20)
-plt.plot(sol.value(speed))
+plt.plot(sol.value(pos), sol.value(speed))
 
 plt.subplot(3,1,3)
 plt.ylim(0, 27000)
-plt.plot(sol.value(w_bal))
+plt.plot(sol.value(pos), sol.value(w_bal))
 plt.show()
