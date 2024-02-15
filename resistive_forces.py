@@ -39,23 +39,26 @@ forces_decline = get_forces_vec(-0.05)
 speeds = np.arange(5, 45, 5)
 force_labels = ['Potential', 'Rolling', 'Bearing', 'Drag']
 
-# Plotting
-fig, ax = plt.subplots(3, 1, figsize=(8, 10))
 
-for i, (forces_arr, title) in enumerate(zip([forces_flat, forces_incline, forces_decline], ['Flat Road', 'Incline', 'Decline'])):
+fig, ax = plt.subplots(3, 1, figsize=(10, 12))
+
+bar_width = 1
+bar_padding = 0.2
+speeds_shift = np.arange(len(speeds)) - 3 * bar_width - bar_padding
+
+for i, (forces, title) in enumerate(zip([forces_flat, forces_incline, forces_decline], ['Flat Road', 'Incline', 'Decline'])):
     for j, force_label in enumerate(force_labels):
-        ax[i].bar(speeds, [force[j] for force in forces_arr], width=3, label=force_label)
+        ax[i].bar(speeds + j * (bar_width + bar_padding), [force[j] for force in forces], width=bar_width, label=force_label)
 
     ax[i].set_title(title)
     ax[i].set_xlabel('Speed (km/h)')
-    ax[i].set_ylabel('Power (W)')
+    ax[i].set_ylabel('Force (N)')
+    ax[i].set_xticks(speeds)
     ax[i].legend()
 
-plt.subplots_adjust(hspace=0.5)
 plt.tight_layout()
+
+# Adjust spacing between subplots
+plt.subplots_adjust(hspace=0.5)
+
 plt.show()
-
-
-print("forces for 20kmph at 0 incline: ")
-print(forces(20, 0))
-    

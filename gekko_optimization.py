@@ -4,14 +4,14 @@ import matplotlib.pyplot as plt
 
 m = GEKKO()
 
-nt = 501
+nt = 10
 tm = np.linspace(0,1,nt)
 m.time = tm
 
 # Variables
 x1 = m.Var(value=0.0)
-x2 = m.Var(value=0.1)
-#x3 = m.Var(value=26630.0)
+x2 = m.Var(value=0.5)
+x3 = m.Var(value=26630.0)
 
 p = np.zeros(nt)
 #p[-1] = 265.0
@@ -41,18 +41,21 @@ A = 0.4
 eta = 1
 w_prime = 26630
 cp = 265
-# slope = np.sin(np.linspace(0, 10*np.pi, nt)) 
+s = 0.05
 # # Parameter for slope
 # slope_param = m.Param(value=slope)
 
-m.Equation(x1.dt()==x2*tf)
-#m.Equation(x2.dt()==(1/x2 * 1/(m + Iw/r**2) * (eta*u - m*g*x2*slope - my*m*g*x2 - b0*x2 - b1*x2**2 - 0.5*Cd*rho*A*x2**3))*tf)
-m.Equation(x2.dt()==(1/x2 * 1/(total_mass + Iw/r**2) * (eta*u - my*total_mass*g*x2 - b0*x2 - b1*x2**2 - 0.5*Cd*rho*A*x2**3))*tf) # Without any slope
-#m.Equation(x3.dt() == m.if3(u - cp, ((1 - x3 / w_prime) * (cp - u))*tf, (-(u - cp)*tf)))
+def sigmoid(x, x0, a):
+    return 1/(1 + np.power(np.e, (-(x-x0)/a)))
+
+m.Equation(x1.dt() == x2*tf)
+m.Equation(x2.dt() == (1/x2 * 1/(total_mass + Iw/r**2) * (eta*u - my*total_mass*g*x2 - total_mass*g*s*x2 - b0*x2 - b1*x2**2 - 0.5*Cd*rho*A*x2**3))*tf) # Without any slope
+m.Equation(x3.dt() == (-(u-cp)*(1-sigmoid(u, cp, 3)) + (1-x3/w_prime)*(cp-u)*sigmoid(u, cp, 3))*tf)
+#m.Equation(x3.dt() == -(u-cp))
 
 
-#m.Equation(x1*final >= 1000)
-#m.Equation(x3 >= 0)
+m.Equation(x1*final == 1000)
+m.Equation(x3 >= 0)
 
 
 m.Minimize(tf)
@@ -70,7 +73,7 @@ print(u.value)
 plt.figure(1)
 plt.plot(tm,x1.value,'k-',lw=2,label=r'$x_1$')
 plt.plot(tm,x2.value,'b-',lw=2,label=r'$x_2$')
-#plt.plot(tm,x3.value,'g--',lw=2,label=r'$x_3$')
+plt.plot(tm,x3.value,'g--',lw=2,label=r'$x_3$')
 plt.plot(tm,u.value,'r--',lw=2,label=r'$u$')
 plt.legend(loc='best')
 plt.xlabel('Time')

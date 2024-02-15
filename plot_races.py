@@ -1,9 +1,10 @@
 import numpy as np
 from activity_reader import *
 import matplotlib.pyplot as plt
+from scipy.ndimage import gaussian_filter1d
 
-#activity = ActivityReader("Canopies_and_coastlines_time_trial.tcx")
-activity = ActivityReader("Greater_london_flat_race.tcx")
+activity = ActivityReader("Canopies_and_coastlines_time_trial.tcx")
+#activity = ActivityReader("Greater_london_flat_race.tcx")
 activity.remove_unactive_period(100)
 
 def w_prime_balance_ode_fitted(power, cp, w_prime):
@@ -53,16 +54,46 @@ def w_prime_balance_bartram(power, cp, w_prime):
     return w_prime_balance
 
 
+def sigmoid(x, x0, a):
+    return 1/(1 + np.power(np.e, (-(x-x0)/a)))
+
+def w_prime_balance_ode_smooth(power, cp, w_prime):
+    w_prime_balance = []
+    last = w_prime
+
+    for p in power:
+        sig = 1 - sigmoid(p, cp, 5)
+        new_below_cp = w_prime - (w_prime - last) * np.exp(-(cp - p) / w_prime)
+        new_above_cp = last - (p - cp)
+        new = sig*new_below_cp + (1-sig)*new_above_cp
+
+        w_prime_balance.append(new)
+        last = new
+
+    return w_prime_balance
+
+
 
 cp = 276
 w_prime = 13684
 
 w_bal_ode = w_prime_balance_ode(activity.power, cp, w_prime)
-w_bal_ode_fitted = w_prime_balance_ode_fitted(activity.power, cp, w_prime)
-w_bal_bartram = w_prime_balance_bartram(activity.power, cp, w_prime)
+w_bal_ode_smooth = w_prime_balance_ode_smooth(activity.power, cp, w_prime)
+
+# sigma = 4
+# w_bal_ode_smooth = gaussian_filter1d(w_bal_ode, sigma)
+
+# w_bal_ode = w_prime_balance_ode(activity.power, cp, w_prime)
+# w_bal_ode_fitted = w_prime_balance_ode_fitted(activity.power, cp, w_prime)
+# w_bal_bartram = w_prime_balance_bartram(activity.power, cp, w_prime)
+
+# plt.plot(w_bal_ode)
+# plt.plot(w_bal_ode_fitted)
+# plt.plot(w_bal_bartram)
+# plt.legend(["W'bal ODE", "W'bal ODE fitted", "W'bal bartram"])
+# plt.show()
 
 plt.plot(w_bal_ode)
-plt.plot(w_bal_ode_fitted)
-plt.plot(w_bal_bartram)
-plt.legend(["W'bal ODE", "W'bal ODE fitted", "W'bal bartram"])
+plt.plot(w_bal_ode_smooth)
+plt.legend(["W'bal ODE", "W'bal ODE smooth"])
 plt.show()
