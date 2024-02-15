@@ -62,7 +62,7 @@ def create_stage(ocp, t0, T, N, length, slope):
     stage.subject_to(stage.at_tf(p) == length)
 
     stage.subject_to(0 <= (u <= 500))
-    stage.subject_to(0.5 <= (v <= 30))
+    stage.subject_to(1 <= (v <= 30))
     stage.subject_to(0 <= (w <= w_prime))
     #stage.subject_to(0 <= w)
     #stage.subject_to(0 <= (ocp.T <= 400))
@@ -105,8 +105,8 @@ stitch_stages(ocp, stage1, stage2)
 opts = {"expand": True,
         "verbose": False,
         "print_time": True,
-        "error_on_fail": True,
-        "ipopt": {"linear_solver": "ma57",  # "ma57" is faster!
+        "error_on_fail": False,
+        "ipopt": {"linear_solver": "mumps",  # "ma57" is faster!
                   "max_iter": 5000,
                   'print_level': 5,
                   'sb': 'yes',  # Suppress IPOPT banner
