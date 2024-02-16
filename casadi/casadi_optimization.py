@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 
 # Set up the problem
-N = 50 # number of control intervals
+N = 35 # number of control intervals
 opti = Opti() # optimization problem
 
 
@@ -80,22 +80,22 @@ opti.set_initial(T, 300)
 opti.set_initial(speed, 15)
 opti.set_initial(U, cp)
 
-p_opts = {"expand": True, "print_time": False}
-s_opts = {"print_level": 3, 
-	    "tol": 5e-1, 
-        "max_iter": 10000,
-	    "dual_inf_tol": 5.0, 
-	    "constr_viol_tol": 1e-1,
-	    "compl_inf_tol": 1e-1, 
-	    "acceptable_tol": 1e-2, 
-		"acceptable_constr_viol_tol": 0.01, 
-		"acceptable_dual_inf_tol": 1e10,
-		"acceptable_compl_inf_tol": 0.01,
-		"acceptable_obj_change_tol": 1e20,
-		"diverging_iterates_tol": 1e20}
+# p_opts = {"expand": True, "print_time": False}
+# s_opts = {"print_level": 3, 
+# 	    "tol": 5e-1, 
+#         "max_iter": 10000,
+# 	    "dual_inf_tol": 5.0, 
+# 	    "constr_viol_tol": 1e-1,
+# 	    "compl_inf_tol": 1e-1, 
+# 	    "acceptable_tol": 1e-2, 
+# 		"acceptable_constr_viol_tol": 0.01, 
+# 		"acceptable_dual_inf_tol": 1e10,
+# 		"acceptable_compl_inf_tol": 0.01,
+# 		"acceptable_obj_change_tol": 1e20,
+# 		"diverging_iterates_tol": 1e20}
 
 
-opti.solver('ipopt', p_opts, s_opts) # set numerical backend
+opti.solver('sqpmethod') # set numerical backend
 try:
     sol = opti.solve() # actual solve
 except RuntimeError:

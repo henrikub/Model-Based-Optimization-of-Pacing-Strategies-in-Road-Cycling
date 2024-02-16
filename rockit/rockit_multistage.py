@@ -66,6 +66,9 @@ def create_stage(ocp, t0, T, N, length, slope):
     stage.subject_to(0 <= (w <= w_prime))
     #stage.subject_to(0 <= w)
     #stage.subject_to(0 <= (ocp.T <= 400))
+
+    stage.set_initial(u, cp)
+    stage.set_initial(stage.T, 200)
     
     stage.method(MultipleShooting(N=N, intg='rk'))
     stage.add_objective(stage.T)
@@ -125,6 +128,9 @@ dT2 = ocp.value(stage2.T)
 T1 = dT1
 T2 = T1 + dT2
 
+# ocp.set_initial(stage1.T, 200)
+# ocp.set_initial(stage2.T, 200)
+
 # Create a casadi function
 solve_ocp = ocp.to_function('solve_ocp', [ocp._method.opti.x], [T1, T2, ocp._method.opti.x, ocp.gist])
 
@@ -133,3 +139,5 @@ prev_sol = 0
 T1, T2, prev_sol, gist = solve_ocp(prev_sol)
 # Solve again using previous solution
 # T1, T2, prev_sol, gist = solve_ocp(prev_sol)
+
+solve_ocp.show_infeasibilities()
