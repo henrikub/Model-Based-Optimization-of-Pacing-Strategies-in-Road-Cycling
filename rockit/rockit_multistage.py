@@ -62,7 +62,7 @@ def create_stage(ocp, t0, T, N, length, slope):
     stage.subject_to(stage.at_tf(p) == length)
 
     stage.subject_to(0 <= (u <= 500))
-    stage.subject_to(1 <= (v <= 30))
+    stage.subject_to(1 <= v)
     stage.subject_to(0 <= (w <= w_prime))
     #stage.subject_to(0 <= w)
     #stage.subject_to(0 <= (ocp.T <= 400))
@@ -128,8 +128,6 @@ dT2 = ocp.value(stage2.T)
 T1 = dT1
 T2 = T1 + dT2
 
-# ocp.set_initial(stage1.T, 200)
-# ocp.set_initial(stage2.T, 200)
 
 # Create a casadi function
 solve_ocp = ocp.to_function('solve_ocp', [ocp._method.opti.x], [T1, T2, ocp._method.opti.x, ocp.gist])

@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 
 # Set up the problem
-N = 35 # number of control intervals
+N = 15 # number of control intervals
 opti = Opti() # optimization problem
 
 
@@ -32,7 +32,7 @@ A = 0.4
 eta = 1
 w_prime = 26630
 cp = 265
-s = 0.05
+s = 0.0
 track_length = 1000
 
 def sigmoid(x, x0, a):
@@ -45,9 +45,9 @@ f = lambda x,u: vertcat(x[1],
                         (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*s*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3), 
                         -(u-cp)) 
 
-#f = lambda x,u: vertcat(x[1], 
-#                        (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*s*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3), 
-#                        -(u-cp)*(1-sigmoid(u, cp, 3)) + (1-w_bal/w_prime)*(cp-u)*sigmoid(u, cp, 3)) 
+# f = lambda x,u: vertcat(x[1], 
+#                         0, 
+#                         -(u-cp)) 
 
 dt = T/N # Control interval
 for k in range(N): # Loop over control intervals
@@ -64,11 +64,13 @@ for k in range(N): # Loop over control intervals
 opti.subject_to(opti.bounded(0,U,500)) # control is limited
 opti.subject_to(opti.bounded(0,w_bal,w_prime))
 
+
 # Set boundary conditions
 opti.subject_to(pos[0]==0) # start at position 0
-opti.subject_to(speed[0]==1) 
+opti.subject_to(speed[0]==10) 
 opti.subject_to(pos[-1]==track_length)
 opti.subject_to(w_bal[0]==w_prime)
+# opti.subject_to(speed[1:] - speed[:-1] == 0)  # Steady-state condition: velocity doesn't change
 
 # One extra constraint
 opti.subject_to(T>=0) # time must be positive
@@ -114,3 +116,5 @@ plt.subplot(3,1,3)
 plt.ylim(0, 27000)
 plt.plot(sol.value(pos), sol.value(w_bal))
 plt.show()
+
+print("The optimal time is: ", sol.value(T))
