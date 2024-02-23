@@ -41,27 +41,6 @@ def forces_drag():
         vec.append((0.5*Cd*rho*A*(v/3.6)**3))
     return vec
 
-def forces(v, s):
-    v = v/3.6
-    P_pot = m*g*s*v
-    P_roll = my*m*g*v
-    P_bear = b0*v + b1*v**2
-    P_drag = 0.5*Cd*rho*A*v**3
-    return [P_pot, P_roll, P_bear, P_drag]
-
-def get_forces_vec(s):
-    vec = []
-    for i in range(5, 45, 5):
-        vec.append(forces(i, s))
-    return vec
-
-forces_flat = get_forces_vec(0)
-forces_incline = get_forces_vec(0.05)
-forces_decline = get_forces_vec(-0.05)
-
-speeds = np.arange(5, 45, 5)
-force_labels = ['Potential', 'Rolling', 'Bearing', 'Drag']
-
 potential_forces_incline = np.array(forces_pot(0.05))
 potential_forces_flat = np.array(forces_pot(0))
 potential_forces_decline = np.array(forces_pot(-0.05))
@@ -74,17 +53,36 @@ print(potential_forces_incline+rolling_forces)
 N = 8
 index = np.arange(N)
 width = 0.35
-#fig, ax = plt.subplots(3, 1, figsize=(10, 12), sharex=True, sharey=True)
+fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 12))
 print(forces_pot(0.05))
 print(forces_roll())
-plt.bar(index, potential_forces_incline, width)
-plt.bar(index, drag_forces, width, bottom=potential_forces_incline)
-plt.bar(index, rolling_forces, width, bottom=potential_forces_incline+drag_forces)
-plt.bar(index, bearing_forces, width, bottom=potential_forces_incline+rolling_forces+drag_forces)
-
 plt.xlabel("Velocity [km/h]")
 plt.ylabel("Power [W]")
-plt.title("Force components at different velocities and gradients")
+ax1.set_title("Force components 5% incline")
+ax2.set_title("Force components flat road")
+ax3.set_title("Force components  5% decline")
 plt.xticks(index, [5, 10, 15, 20, 25, 30, 35, 40])
-plt.legend(['Potential', 'Drag', 'Rolling', 'Bearing'])
+
+ax1.bar(index, potential_forces_incline, width)
+ax1.bar(index, drag_forces, width, bottom=potential_forces_incline)
+ax1.bar(index, rolling_forces, width, bottom=potential_forces_incline+drag_forces)
+ax1.bar(index, bearing_forces, width, bottom=potential_forces_incline+rolling_forces+drag_forces)
+
+ax2.bar(index, potential_forces_flat, width)
+ax2.bar(index, drag_forces, width, bottom=potential_forces_flat)
+ax2.bar(index, rolling_forces, width, bottom=potential_forces_flat+drag_forces)
+ax2.bar(index, bearing_forces, width, bottom=potential_forces_flat+rolling_forces+drag_forces)
+
+ax3.bar(index, potential_forces_decline, width)
+ax3.bar(index, drag_forces, width, bottom=0)
+ax3.bar(index, rolling_forces, width, bottom=drag_forces)
+ax3.bar(index, bearing_forces, width, bottom=rolling_forces+drag_forces)
+
+ax1.legend(['Potential', 'Drag', 'Rolling', 'Bearing'])
+ax2.legend(['Potential', 'Drag', 'Rolling', 'Bearing'])
+ax3.legend(['Potential', 'Drag', 'Rolling', 'Bearing'])
+
+ax3.axhline(y=0, color='black', linestyle='-', linewidth = 0.5)
+plt.subplots_adjust(hspace=0.5)
+
 plt.show()
