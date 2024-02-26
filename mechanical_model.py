@@ -130,7 +130,7 @@ t2, y2, u2 = response2.time, response2.outputs, response2.inputs
 # print(u)
 # print(new_power)
 diff = [(y2[1][i]-y[1][i])*3.6 for i in range(len(y2[1]))]
-print(diff)
+#print(diff)
 plt.plot(activity.distance, y[1]*3.6)
 plt.plot(activity.distance, y2[1]*3.6)
 plt.xlabel("Distance [m]")
