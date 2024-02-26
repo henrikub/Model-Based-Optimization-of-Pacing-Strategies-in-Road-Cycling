@@ -112,8 +112,6 @@ print(mse(activity.speed, y[1]))
 plt.subplot(2,1,1)
 plt.plot(activity.distance, y[1]*3.6)
 plt.plot(activity.distance, [elem*3.6 for elem in activity.speed])
-# plt.plot(activity.distance, y[1])
-# plt.plot(activity.distance, activity.speed)
 plt.ylabel("Velocity [km/h]")
 plt.legend(["estimated velocity", "actual velocity"])
 
@@ -125,11 +123,17 @@ plt.ylabel("Elevation [m]")
 plt.xlabel("Distance [m]")
 plt.show()
 
-
-
-# w_bal_ode = w_prime_balance_ode(activity.power, 265, 26630)
-
-# plt.plot(t, y[2])
-# plt.plot(t, w_bal_ode)
-# plt.legend(["Estimated w_bal", "Actual w_bal"])
-# plt.show()
+# Finding how much one extra Watt will affect the velocity
+new_power = [elem+1 for elem in u]
+response2 = ct.input_output_response(bicycle_system,  t, new_power, [0, activity.speed[0], 26630], params)
+t2, y2, u2 = response2.time, response2.outputs, response2.inputs
+# print(u)
+# print(new_power)
+diff = [(y2[1][i]-y[1][i])*3.6 for i in range(len(y2[1]))]
+print(diff)
+plt.plot(activity.distance, y[1]*3.6)
+plt.plot(activity.distance, y2[1]*3.6)
+plt.xlabel("Distance [m]")
+plt.ylabel("Velocity [km/h]")
+plt.legend(['Estimated velocity', 'Estimated velocity with +1W throughout'])
+plt.show()
