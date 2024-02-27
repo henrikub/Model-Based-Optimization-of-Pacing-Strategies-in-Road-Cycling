@@ -33,6 +33,11 @@ def create_multistage_optimization(gradients, stage_distances, num_steps, smooth
                         (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*s*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3), 
                         -(u-cp))
 
+    # With w'bal ODE as physiological model 
+    # f = lambda x,u,s: vertcat(x[1], 
+    #                        (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*s*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3), 
+    #                        -(u-cp)*(1-utils.sigmoid(u, cp, 3)) + (1-w_bal/w_prime)*(cp-u)*utils.sigmoid(u, cp, 3)) 
+
 
     total_distance = sum(stage_distances)
     steps_per_stage = [int(stage/total_distance*N) for stage in stage_distances]
@@ -54,7 +59,7 @@ def create_multistage_optimization(gradients, stage_distances, num_steps, smooth
 
     
     if smooth_power_constraint:
-        opti.minimize(T + 0.00005 * sumsqr(U[:,1:] - U[:,:-1])) 
+        opti.minimize(T + 0.0005 * sumsqr(U[:,1:] - U[:,:-1])) 
     else:
         opti.minimize(T) 
 
@@ -98,9 +103,16 @@ def solve_multistage_optimization(gradients, stage_distances, max_attempts, smoo
             attempt += 1
     return sol, T, U, X
         
+# Bologna simplified track
+# gradients = [-0.0036, 0.0685, -0.0685, 0.0035, -0.0035, 0.0685]
+# distances = [5000, 3100, 3300, 5100, 5200, 3100]
+# elevation = utils.calculate_elevation_profile(gradients, distances, start_elevation=300)
 
-gradients = [0.05, 0.00, 0.04]
-distances = [1000, 2000, 1000]
+# Lutcher CCW simplified track
+gradients = [0, 0.08, -0.08, 0, 0.08]
+distances = [2700, 5900, 5900, 700, 5900]
+elevation = utils.calculate_elevation_profile(gradients, distances, start_elevation=284)
+
 sol, T, U, X = solve_multistage_optimization(gradients, distances, 3, True)
 cp = 265
 
@@ -110,10 +122,11 @@ pos = sol.value(X[0,:])
 velocity = sol.value(X[1,:])
 w_bal = sol.value(X[2,:])
 
-elevation = utils.calculate_elevation_profile(gradients, distances)
+elevation = utils.calculate_elevation_profile(gradients, distances, start_elevation=300)
 
 fig, ax,  = plt.subplots(3,1)
 
+ax[0].set_title(f"The optimal time is {round(optimal_time/60, 2)} min")
 ax[0].set_ylabel("Power [W]")
 ax[0].set_ylim(0,550)
 ax[0].plot(pos, power_output)
@@ -128,6 +141,7 @@ ax1_twin.legend(["Elevation Profile"])
 ax[1].set_ylabel("Velocity [m/s]")
 ax[1].set_ylim(0,20)
 ax[1].plot(pos, velocity)
+ax[1].legend(["Velocity"])
 ax2_twin = ax[1].twinx()
 ax2_twin.set_ylabel('Elevation [m]', color='tab:red')
 ax2_twin.plot(elevation, color='tab:red')
@@ -138,6 +152,7 @@ ax[2].set_ylabel("W'balance [J]")
 ax[2].set_xlabel("Position [m]")
 ax[2].set_ylim(0, 27000)
 ax[2].plot(pos, w_bal)
+ax[2].legend(["W'balance"])
 ax3_twin = ax[2].twinx()
 ax3_twin.set_ylabel('Elevation [m]', color='tab:red')
 ax3_twin.plot(elevation, color='tab:red')
