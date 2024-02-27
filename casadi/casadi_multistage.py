@@ -80,13 +80,13 @@ def create_multistage_optimization(gradients, stage_distances, num_steps, smooth
     return opti, T, U, X
 
 
-def solve_multistage_optization(gradients, stage_distances, max_attempts, smooth_power_constraint):
+def solve_multistage_optimization(gradients, stage_distances, max_attempts, smooth_power_constraint):
     attempt = 0
     sol = 0
     done = False
 
     while attempt < max_attempts and done == False:
-        N = round(sum(stage_distances)/100) + attempt*3
+        N = round(sum(stage_distances)/50) + attempt*3
         opti, T, U, X = create_multistage_optimization(gradients, stage_distances, N, smooth_power_constraint)
         try:
             sol = opti.solve() # actual solve
@@ -99,9 +99,10 @@ def solve_multistage_optization(gradients, stage_distances, max_attempts, smooth
     return sol, T, U, X
         
 
-gradients = [0.05, 0.03, 0.0]
-distances = [1000, 1000, 1000]
-sol, T, U, X = solve_multistage_optization(gradients, distances, 5, False)
+gradients = [0.05, -0.03, 0.05]
+distances = [1000, 1000, 1500]
+sol, T, U, X = solve_multistage_optimization(gradients, distances, 3, False)
+cp = 265
 
 power_output = sol.value(U)
 optimal_time = sol.value(T)
@@ -109,13 +110,16 @@ pos = sol.value(X[0,:])
 velocity = sol.value(X[1,:])
 w_bal = sol.value(X[2,:])
 
-#elevation = calculate_elevation_arr()
-
+elevation = utils.calculate_elevation_profile(gradients, distances)
+plt.plot(elevation)
+plt.show()
 
 plt.subplot(3,1,1)
 plt.ylabel("Power [W]")
 plt.ylim(0,550)
 plt.plot(pos, power_output)
+plt.plot(round(pos[-1])*[cp])
+plt.legend(["Optimal power output", "CP"])
 
 plt.subplot(3,1,2)
 plt.ylabel("Velocity [m/s]")

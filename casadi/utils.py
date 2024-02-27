@@ -1,12 +1,12 @@
 import numpy as np
 
-def calculate_elevation_arr(slope, distance):
-    angle = np.arctan(slope)
-    elevation_arr = np.zeros(len(distance))
+def calculate_elevation_profile(slopes, lengths):
+    angles =  []
+    for i, s in enumerate(slopes):
+        angles += lengths[i]*[np.arctan(s)]
 
-    for i, d in enumerate(distance):
-        elevation_arr[i] = d * np.tan(angle)
-    return elevation_arr
-
-def create_track(slope_arr, distance_arr):
-    print(" ")
+    elevation = np.zeros(sum(lengths))
+    elevation[0] = 0
+    for i in range(1,len(elevation)):
+        elevation[i] = elevation[i-1] + np.sin(angles[i])
+    return elevation
