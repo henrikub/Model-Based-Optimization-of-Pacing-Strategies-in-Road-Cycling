@@ -54,7 +54,7 @@ def create_multistage_optimization(gradients, stage_distances, num_steps, smooth
 
     
     if smooth_power_constraint:
-        opti.minimize(T + 0.005 * sumsqr(U[:,1:] - U[:,:-1])) 
+        opti.minimize(T + 0.00005 * sumsqr(U[:,1:] - U[:,:-1])) 
     else:
         opti.minimize(T) 
 
@@ -86,7 +86,7 @@ def solve_multistage_optimization(gradients, stage_distances, max_attempts, smoo
     done = False
 
     while attempt < max_attempts and done == False:
-        N = round(sum(stage_distances)/50) + attempt*3
+        N = round(sum(stage_distances)/10) + attempt*3
         opti, T, U, X = create_multistage_optimization(gradients, stage_distances, N, smooth_power_constraint)
         try:
             sol = opti.solve() # actual solve
@@ -99,9 +99,9 @@ def solve_multistage_optimization(gradients, stage_distances, max_attempts, smoo
     return sol, T, U, X
         
 
-gradients = [0.05, -0.03, 0.05]
-distances = [1000, 1000, 1500]
-sol, T, U, X = solve_multistage_optimization(gradients, distances, 3, False)
+gradients = [0.05, 0.00, 0.04]
+distances = [1000, 2000, 1000]
+sol, T, U, X = solve_multistage_optimization(gradients, distances, 3, True)
 cp = 265
 
 power_output = sol.value(U)
@@ -111,24 +111,37 @@ velocity = sol.value(X[1,:])
 w_bal = sol.value(X[2,:])
 
 elevation = utils.calculate_elevation_profile(gradients, distances)
-plt.plot(elevation)
+
+fig, ax,  = plt.subplots(3,1)
+
+ax[0].set_ylabel("Power [W]")
+ax[0].set_ylim(0,550)
+ax[0].plot(pos, power_output)
+ax[0].plot(round(pos[-1])*[cp], color='tab:gray', linestyle='dashed')
+ax[0].legend(["Optimal power output", "CP"])
+ax1_twin = ax[0].twinx()
+ax1_twin.set_ylabel('Elevation [m]', color='tab:red')
+ax1_twin.plot(elevation, color='tab:red')
+ax1_twin.tick_params(axis='y', labelcolor='tab:red')
+ax1_twin.legend(["Elevation Profile"])
+
+ax[1].set_ylabel("Velocity [m/s]")
+ax[1].set_ylim(0,20)
+ax[1].plot(pos, velocity)
+ax2_twin = ax[1].twinx()
+ax2_twin.set_ylabel('Elevation [m]', color='tab:red')
+ax2_twin.plot(elevation, color='tab:red')
+ax2_twin.tick_params(axis='y', labelcolor='tab:red')
+ax2_twin.legend(["Elevation Profile"])
+
+ax[2].set_ylabel("W'balance [J]")
+ax[2].set_xlabel("Position [m]")
+ax[2].set_ylim(0, 27000)
+ax[2].plot(pos, w_bal)
+ax3_twin = ax[2].twinx()
+ax3_twin.set_ylabel('Elevation [m]', color='tab:red')
+ax3_twin.plot(elevation, color='tab:red')
+ax3_twin.tick_params(axis='y', labelcolor='tab:red')
+ax3_twin.legend(["Elevation Profile"])
 plt.show()
 
-plt.subplot(3,1,1)
-plt.ylabel("Power [W]")
-plt.ylim(0,550)
-plt.plot(pos, power_output)
-plt.plot(round(pos[-1])*[cp])
-plt.legend(["Optimal power output", "CP"])
-
-plt.subplot(3,1,2)
-plt.ylabel("Velocity [m/s]")
-plt.ylim(0,20)
-plt.plot(pos, velocity)
-
-plt.subplot(3,1,3)
-plt.ylabel("W'balance [J]")
-plt.xlabel("Position [m]")
-plt.ylim(0, 27000)
-plt.plot(pos, w_bal)
-plt.show()
