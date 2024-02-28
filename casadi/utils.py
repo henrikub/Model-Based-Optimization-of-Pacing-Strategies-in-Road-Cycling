@@ -13,3 +13,10 @@ def calculate_elevation_profile(slopes, lengths, start_elevation):
 
 def sigmoid(x, x0, a):
     return 1/(1 + np.power(np.e, (-(x-x0)/a)))
+
+def get_slope_arr(slopes, lengths):
+    slope_arr = []
+    for i in range(len(slopes)):
+        slope_arr += lengths[i]*[slopes[i]]
+    return slope_arr
+

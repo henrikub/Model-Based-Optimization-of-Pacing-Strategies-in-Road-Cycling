@@ -2,7 +2,7 @@ from casadi import *
 import matplotlib.pyplot as plt
 import utils
 
-def create_multistage_optimization(gradients, stage_distances, num_steps, smooth_power_constraint = False):
+def create_multistage_optimization(gradients, stage_distances, num_steps, final_time_guess, smooth_power_constraint = False):
     N = num_steps
     opti = Opti()
     X = opti.variable(3, N+1)
@@ -28,9 +28,13 @@ def create_multistage_optimization(gradients, stage_distances, num_steps, smooth
     w_prime = 26630
     cp = 265
     
+    slope = utils.get_slope_arr(gradients, stage_distances)
+    pos_grid = np.linspace(0, len(slope), len(slope))
 
-    f = lambda x,u,s: vertcat(x[1], 
-                        (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*s*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3), 
+    interpolated_slope = interpolant('Slope', 'bspline', [pos_grid], slope)
+
+    f = lambda x,u: vertcat(x[1], 
+                        (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3), 
                         -(u-cp))
 
     # With w'bal ODE as physiological model 
@@ -50,16 +54,16 @@ def create_multistage_optimization(gradients, stage_distances, num_steps, smooth
 
     dt = T/N 
     for k in range(N): 
-        k1 = f(X[:,k], U[:,k], s[k])
-        k2 = f(X[:,k] + dt/2*k1, U[:,k], s[k])
-        k3 = f(X[:,k] + dt/2*k2, U[:,k], s[k])
-        k4 = f(X[:,k] + dt*k3, U[:,k], s[k])
+        k1 = f(X[:,k], U[:,k])
+        k2 = f(X[:,k] + dt/2*k1, U[:,k])
+        k3 = f(X[:,k] + dt/2*k2, U[:,k])
+        k4 = f(X[:,k] + dt*k3, U[:,k])
         x_next = X[:,k] + dt/6*(k1+2*k2+2*k3+k4)
         opti.subject_to(X[:,k+1] == x_next)
 
     
     if smooth_power_constraint:
-        opti.minimize(T + 0.0005 * sumsqr(U[:,1:] - U[:,:-1])) 
+        opti.minimize(T + 0.000005 * sumsqr(U[:,1:] - U[:,:-1])) 
     else:
         opti.minimize(T) 
 
@@ -77,7 +81,7 @@ def create_multistage_optimization(gradients, stage_distances, num_steps, smooth
     opti.subject_to(speed > 1)
 
     # Provide an initial guess for the solver
-    opti.set_initial(T, 300)
+    opti.set_initial(T, final_time_guess)
     opti.set_initial(speed, 10)
     opti.set_initial(U, cp)
 
@@ -85,14 +89,14 @@ def create_multistage_optimization(gradients, stage_distances, num_steps, smooth
     return opti, T, U, X
 
 
-def solve_multistage_optimization(gradients, stage_distances, max_attempts, smooth_power_constraint):
+def solve_multistage_optimization(gradients, stage_distances, max_attempts, final_time_guess, smooth_power_constraint):
     attempt = 0
     sol = 0
     done = False
 
     while attempt < max_attempts and done == False:
         N = round(sum(stage_distances)/10) + attempt*3
-        opti, T, U, X = create_multistage_optimization(gradients, stage_distances, N, smooth_power_constraint)
+        opti, T, U, X = create_multistage_optimization(gradients, stage_distances, N, final_time_guess, smooth_power_constraint)
         try:
             sol = opti.solve() # actual solve
             done = True
@@ -108,12 +112,17 @@ def solve_multistage_optimization(gradients, stage_distances, max_attempts, smoo
 # distances = [5000, 3100, 3300, 5100, 5200, 3100]
 # elevation = utils.calculate_elevation_profile(gradients, distances, start_elevation=300)
 
-# Lutcher CCW simplified track
-gradients = [0, 0.08, -0.08, 0, 0.08]
-distances = [2700, 5900, 5900, 700, 5900]
-elevation = utils.calculate_elevation_profile(gradients, distances, start_elevation=284)
+gradients = [0.0, 0.05]
+distances = [1000, 1000]
+elevation = utils.calculate_elevation_profile(gradients, distances, start_elevation=300)
 
-sol, T, U, X = solve_multistage_optimization(gradients, distances, 3, True)
+# Lutcher CCW simplified track
+# gradients = [0, 0.08, -0.08, 0, 0.08]
+# distances = [2700, 5900, 5900, 700, 5900]
+# elevation = utils.calculate_elevation_profile(gradients, distances, start_elevation=284)
+time_initial_guess = sum(distances)/1000 * 120
+
+sol, T, U, X = solve_multistage_optimization(gradients, distances, 3, time_initial_guess, True)
 cp = 265
 
 power_output = sol.value(U)
@@ -159,4 +168,3 @@ ax3_twin.plot(elevation, color='tab:red')
 ax3_twin.tick_params(axis='y', labelcolor='tab:red')
 ax3_twin.legend(["Elevation Profile"])
 plt.show()
-
