@@ -20,3 +20,14 @@ def get_slope_arr(slopes, lengths):
         slope_arr += lengths[i]*[slopes[i]]
     return slope_arr
 
+def calculate_gradient(distance, elevation):
+    gradient = []
+    for i in range(len(distance)-1):
+        delta_elevation = elevation[i] - elevation[i+1]
+        delta_distance = distance[i] - distance[i+1]
+        if delta_distance != 0:
+            gradient.append(delta_elevation/delta_distance)
+        else:
+            gradient.append(0)
+    gradient.append(0)
+    return gradient

@@ -1,5 +1,5 @@
 import numpy as np
-from activity_reader import *
+from activity_reader_tcx.activity_reader import *
 import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter1d
 
@@ -96,4 +96,28 @@ w_bal_ode_smooth = w_prime_balance_ode_smooth(activity.power, cp, w_prime)
 plt.plot(w_bal_ode)
 plt.plot(w_bal_ode_smooth)
 plt.legend(["W'bal ODE", "W'bal ODE smooth"])
+plt.show()
+
+
+def calculate_gradient(distance, elevation):
+    gradient = []
+    for i in range(len(distance)-1):
+        delta_elevation = elevation[i] - elevation[i+1]
+        delta_distance = distance[i] - distance[i+1]
+        if delta_distance != 0:
+            gradient.append(delta_elevation/delta_distance)
+        else:
+            gradient.append(0)
+    gradient.append(0)
+    return gradient
+
+activity = ActivityReader("Mech_isle_loop_time_trial.tcx")
+activity.remove_unactive_period(200)
+
+sigma = 4
+smoothed_elev = gaussian_filter1d(activity.elevation, sigma)
+
+slope = calculate_gradient(activity.distance, smoothed_elev)
+print(slope)
+plt.plot(slope)
 plt.show()

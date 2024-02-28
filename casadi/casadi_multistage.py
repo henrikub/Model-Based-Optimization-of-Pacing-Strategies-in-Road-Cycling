@@ -1,8 +1,10 @@
 from casadi import *
 import matplotlib.pyplot as plt
 import utils
+from activity_reader import ActivityReader
+from scipy.ndimage import gaussian_filter1d
 
-def create_multistage_optimization(gradients, stage_distances, num_steps, final_time_guess, smooth_power_constraint = False):
+def create_multistage_optimization(distance, elevation, num_steps, final_time_guess, smooth_power_constraint = False):
     N = num_steps
     opti = Opti()
     X = opti.variable(3, N+1)
@@ -27,11 +29,13 @@ def create_multistage_optimization(gradients, stage_distances, num_steps, final_
     eta = 1
     w_prime = 26630
     cp = 265
-    
-    slope = utils.get_slope_arr(gradients, stage_distances)
-    pos_grid = np.linspace(0, len(slope), len(slope))
 
-    interpolated_slope = interpolant('Slope', 'bspline', [pos_grid], slope)
+    sigma = 4
+    smoothed_elev = gaussian_filter1d(elevation, sigma)
+
+    slope = utils.calculate_gradient(distance, smoothed_elev)
+
+    interpolated_slope = interpolant('Slope', 'bspline', [distance], slope)
 
     f = lambda x,u: vertcat(x[1], 
                         (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3), 
@@ -41,16 +45,6 @@ def create_multistage_optimization(gradients, stage_distances, num_steps, final_
     # f = lambda x,u,s: vertcat(x[1], 
     #                        (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*s*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3), 
     #                        -(u-cp)*(1-utils.sigmoid(u, cp, 3)) + (1-w_bal/w_prime)*(cp-u)*utils.sigmoid(u, cp, 3)) 
-
-
-    total_distance = sum(stage_distances)
-    steps_per_stage = [int(stage/total_distance*N) for stage in stage_distances]
-    start = 0
-
-    s = np.zeros(num_steps)
-    for grade, steps in zip(gradients, steps_per_stage):
-        s[start:start+steps] = grade
-        start += steps
 
     dt = T/N 
     for k in range(N): 
@@ -68,13 +62,13 @@ def create_multistage_optimization(gradients, stage_distances, num_steps, final_
         opti.minimize(T) 
 
     # Set the path constraints
-    opti.subject_to(opti.bounded(0,U,500)) # control is limited
+    opti.subject_to(opti.bounded(0,U,500)) 
     opti.subject_to(opti.bounded(0,w_bal,w_prime))
 
     # Set boundary conditions
-    opti.subject_to(pos[0]==0) # start at position 0
+    opti.subject_to(pos[0]==0) 
     opti.subject_to(speed[0]==1) 
-    opti.subject_to(pos[-1]==total_distance)
+    opti.subject_to(pos[-1]==distance[-1])
     opti.subject_to(w_bal[0]==w_prime)
 
     opti.subject_to(T>=0) # time must be positive
@@ -85,44 +79,24 @@ def create_multistage_optimization(gradients, stage_distances, num_steps, final_
     opti.set_initial(speed, 10)
     opti.set_initial(U, cp)
 
-    opti.solver('ipopt') # set numerical backend
+    opti.solver('ipopt') 
     return opti, T, U, X
 
 
-def solve_multistage_optimization(gradients, stage_distances, max_attempts, final_time_guess, smooth_power_constraint):
-    attempt = 0
-    sol = 0
-    done = False
-
-    while attempt < max_attempts and done == False:
-        N = round(sum(stage_distances)/10) + attempt*3
-        opti, T, U, X = create_multistage_optimization(gradients, stage_distances, N, final_time_guess, smooth_power_constraint)
-        try:
-            sol = opti.solve() # actual solve
-            done = True
-            print(" ************************* Done found the solution!! ***************************")
-        except RuntimeError:
-            done = False
-        finally:
-            attempt += 1
+def solve_multistage_optimization(distance, elevation, final_time_guess, smooth_power_constraint):
+    N = round(distance[-1]/10)
+    opti, T, U, X = create_multistage_optimization(distance, elevation, N, final_time_guess, smooth_power_constraint)
+    sol = opti.solve() 
     return sol, T, U, X
         
-# Bologna simplified track
-# gradients = [-0.0036, 0.0685, -0.0685, 0.0035, -0.0035, 0.0685]
-# distances = [5000, 3100, 3300, 5100, 5200, 3100]
-# elevation = utils.calculate_elevation_profile(gradients, distances, start_elevation=300)
 
-gradients = [0.0, 0.05]
-distances = [1000, 1000]
-elevation = utils.calculate_elevation_profile(gradients, distances, start_elevation=300)
+activity = ActivityReader("Mech_isle_loop_time_trial.tcx")
+#activity = ActivityReader("Canopies_and_coastlines_time_trial.tcx")
+activity.remove_unactive_period(200)
 
-# Lutcher CCW simplified track
-# gradients = [0, 0.08, -0.08, 0, 0.08]
-# distances = [2700, 5900, 5900, 700, 5900]
-# elevation = utils.calculate_elevation_profile(gradients, distances, start_elevation=284)
-time_initial_guess = sum(distances)/1000 * 120
+time_initial_guess = activity.distance[-1]/1000 * 120
 
-sol, T, U, X = solve_multistage_optimization(gradients, distances, 3, time_initial_guess, True)
+sol, T, U, X = solve_multistage_optimization(activity.distance, activity.elevation, time_initial_guess, False)
 cp = 265
 
 power_output = sol.value(U)
@@ -131,9 +105,8 @@ pos = sol.value(X[0,:])
 velocity = sol.value(X[1,:])
 w_bal = sol.value(X[2,:])
 
-elevation = utils.calculate_elevation_profile(gradients, distances, start_elevation=300)
 
-fig, ax,  = plt.subplots(3,1)
+fig, ax = plt.subplots(3,1)
 
 ax[0].set_title(f"The optimal time is {round(optimal_time/60, 2)} min")
 ax[0].set_ylabel("Power [W]")
@@ -143,7 +116,7 @@ ax[0].plot(round(pos[-1])*[cp], color='tab:gray', linestyle='dashed')
 ax[0].legend(["Optimal power output", "CP"])
 ax1_twin = ax[0].twinx()
 ax1_twin.set_ylabel('Elevation [m]', color='tab:red')
-ax1_twin.plot(elevation, color='tab:red')
+ax1_twin.plot(activity.distance, activity.elevation, color='tab:red')
 ax1_twin.tick_params(axis='y', labelcolor='tab:red')
 ax1_twin.legend(["Elevation Profile"])
 
@@ -153,7 +126,7 @@ ax[1].plot(pos, velocity)
 ax[1].legend(["Velocity"])
 ax2_twin = ax[1].twinx()
 ax2_twin.set_ylabel('Elevation [m]', color='tab:red')
-ax2_twin.plot(elevation, color='tab:red')
+ax2_twin.plot(activity.distance, activity.elevation, color='tab:red')
 ax2_twin.tick_params(axis='y', labelcolor='tab:red')
 ax2_twin.legend(["Elevation Profile"])
 
@@ -164,7 +137,7 @@ ax[2].plot(pos, w_bal)
 ax[2].legend(["W'balance"])
 ax3_twin = ax[2].twinx()
 ax3_twin.set_ylabel('Elevation [m]', color='tab:red')
-ax3_twin.plot(elevation, color='tab:red')
+ax3_twin.plot(activity.distance, activity.elevation, color='tab:red')
 ax3_twin.tick_params(axis='y', labelcolor='tab:red')
 ax3_twin.legend(["Elevation Profile"])
 plt.show()

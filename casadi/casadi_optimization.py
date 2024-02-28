@@ -1,7 +1,16 @@
 from casadi import *
 import matplotlib.pyplot as plt
 from utils import *
+from activity_reader import ActivityReader
+from scipy.ndimage import gaussian_filter1d
 
+activity = ActivityReader("Mech_isle_loop_time_trial.tcx")
+activity.remove_unactive_period(200)
+
+sigma = 4
+smoothed_elev = gaussian_filter1d(activity.elevation, sigma)
+
+slope = calculate_gradient(activity.distance, smoothed_elev)
 
 # Set up the problem
 N = 400 # number of control intervals
@@ -33,20 +42,18 @@ eta = 1
 w_prime = 26630
 cp = 265
 #s = [0.05, 0]
-track_length = 4000
+track_length = activity.distance[-1]
 
-def sigmoid(x, x0, a):
-    return 1/(1 + np.power(np.e, (-(x-x0)/a)))
-
+interpolated_slope = interpolant('Slope', 'bspline', [activity.distance], slope)
 # Set up the objective
-#opti.minimize(T) # race in minimal time
-opti.minimize(T + 0.0005 * sumsqr(U[:,1:] - U[:,:-1]))
+opti.minimize(T) # race in minimal time
+#opti.minimize(T + 0.0005 * sumsqr(U[:,1:] - U[:,:-1]))
 
-slope = if_else(X[0] <= 2000, 0.07, -0.06)
+#slope = if_else(X[0] <= 2000, 0.07, -0.06)
 #slope = get_slope_arr(s, track_length)
 
 f = lambda x,u: vertcat(x[1], 
-                        (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*slope*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3), 
+                        (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3), 
                         -(u-cp)) 
 
 dt = T/N # Control interval
@@ -87,15 +94,29 @@ except RuntimeError:
     print(opti.debug.x_describe(3))
 
 
-plt.subplot(3,1,1)
-plt.ylim(0,550)
-plt.plot(sol.value(pos)[:-1], sol.value(U))
+fig, ax = plt.subplots(3,1)
+ax[0].set_title(f"The optimal time is {round(sol.value(T)/60, 2)} min")
+ax[0].set_ylim(0,550)
+ax[0].plot(sol.value(pos)[:-1], sol.value(U))
+ax1_twin = ax[0].twinx()
+ax1_twin.set_ylabel('Elevation [m]', color='tab:red')
+ax1_twin.plot(activity.distance, activity.elevation, color='tab:red')
+ax1_twin.tick_params(axis='y', labelcolor='tab:red')
+ax1_twin.legend(["Elevation Profile"])
 
-plt.subplot(3,1,2)
-plt.ylim(0,20)
-plt.plot(sol.value(pos), sol.value(speed))
+ax[1].set_ylim(0,20)
+ax[1].plot(sol.value(pos), sol.value(speed))
+ax2_twin = ax[1].twinx()
+ax2_twin.set_ylabel('Elevation [m]', color='tab:red')
+ax2_twin.plot(activity.distance, activity.elevation, color='tab:red')
+ax2_twin.tick_params(axis='y', labelcolor='tab:red')
+ax2_twin.legend(["Elevation Profile"])
 
-plt.subplot(3,1,3)
-plt.ylim(0, 27000)
-plt.plot(sol.value(pos), sol.value(w_bal))
+ax[2].set_ylim(0, 27000)
+ax[2].plot(sol.value(pos), sol.value(w_bal))
+ax3_twin = ax[2].twinx()
+ax3_twin.set_ylabel('Elevation [m]', color='tab:red')
+ax3_twin.plot(activity.distance, activity.elevation, color='tab:red')
+ax3_twin.tick_params(axis='y', labelcolor='tab:red')
+ax3_twin.legend(["Elevation Profile"])
 plt.show()

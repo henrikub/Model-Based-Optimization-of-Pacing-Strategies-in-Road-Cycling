@@ -1,5 +1,5 @@
 import numpy as np
-from activity_reader import *
+from activity_reader_tcx.activity_reader import *
 import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter1d
 
