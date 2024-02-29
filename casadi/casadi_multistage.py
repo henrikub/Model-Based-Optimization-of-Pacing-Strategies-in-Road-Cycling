@@ -30,7 +30,7 @@ def create_multistage_optimization(distance, elevation, num_steps, final_time_gu
     w_prime = 26630
     cp = 265
 
-    sigma = 4
+    sigma = 10
     smoothed_elev = gaussian_filter1d(elevation, sigma)
 
     slope = utils.calculate_gradient(distance, smoothed_elev)
@@ -62,8 +62,9 @@ def create_multistage_optimization(distance, elevation, num_steps, final_time_gu
         opti.minimize(T) 
 
     # Set the path constraints
-    opti.subject_to(opti.bounded(0,U,500)) 
-    opti.subject_to(opti.bounded(0,w_bal,w_prime))
+    opti.subject_to(opti.bounded(0, U, 500)) 
+    opti.subject_to(opti.bounded(0, w_bal, w_prime))
+    opti.subject_to(opti.bounded(1, speed, 25))
 
     # Set boundary conditions
     opti.subject_to(pos[0]==0) 
@@ -71,47 +72,50 @@ def create_multistage_optimization(distance, elevation, num_steps, final_time_gu
     opti.subject_to(pos[-1]==distance[-1])
     opti.subject_to(w_bal[0]==w_prime)
 
-    opti.subject_to(T>=0) # time must be positive
-    opti.subject_to(speed > 1)
+    opti.subject_to(T>=0) 
+    #opti.subject_to(speed > 1)
 
     # Provide an initial guess for the solver
     opti.set_initial(T, final_time_guess)
     opti.set_initial(speed, 10)
     opti.set_initial(U, cp)
 
+    p_opts = {"expand": False}
+    s_opts = {"max_iter": 300000}
     opti.solver('ipopt') 
     return opti, T, U, X
 
 
-def solve_multistage_optimization(distance, elevation, final_time_guess, smooth_power_constraint):
-    N = round(distance[-1]/10)
-    opti, T, U, X = create_multistage_optimization(distance, elevation, N, final_time_guess, smooth_power_constraint)
+def solve_multistage_optimization(distance, elevation, final_time_guess, num_steps, smooth_power_constraint):
+    opti, T, U, X = create_multistage_optimization(distance, elevation, num_steps, final_time_guess, smooth_power_constraint)
     sol = opti.solve() 
     return sol, T, U, X
         
 
 activity = ActivityReader("Mech_isle_loop_time_trial.tcx")
 #activity = ActivityReader("Canopies_and_coastlines_time_trial.tcx")
-activity.remove_unactive_period(200)
+#activity = ActivityReader("Hilly_route.tcx")
+activity.remove_unactive_period(400)
 
 time_initial_guess = activity.distance[-1]/1000 * 120
-
-sol, T, U, X = solve_multistage_optimization(activity.distance, activity.elevation, time_initial_guess, False)
+N = round(activity.distance[-1]/20)
+sol, T, U, X = solve_multistage_optimization(activity.distance, activity.elevation, time_initial_guess, N, False)
 cp = 265
+w_prime = 26630
 
-power_output = sol.value(U)
+optimal_power = sol.value(U)
 optimal_time = sol.value(T)
 pos = sol.value(X[0,:])
 velocity = sol.value(X[1,:])
 w_bal = sol.value(X[2,:])
-
+t_grid = linspace(0, optimal_time, N+1)
 
 fig, ax = plt.subplots(3,1)
 
 ax[0].set_title(f"The optimal time is {round(optimal_time/60, 2)} min")
 ax[0].set_ylabel("Power [W]")
 ax[0].set_ylim(0,550)
-ax[0].plot(pos, power_output)
+ax[0].plot(pos, optimal_power)
 ax[0].plot(round(pos[-1])*[cp], color='tab:gray', linestyle='dashed')
 ax[0].legend(["Optimal power output", "CP"])
 ax1_twin = ax[0].twinx()
@@ -141,3 +145,34 @@ ax3_twin.plot(activity.distance, activity.elevation, color='tab:red')
 ax3_twin.tick_params(axis='y', labelcolor='tab:red')
 ax3_twin.legend(["Elevation Profile"])
 plt.show()
+
+
+smoothed_power = gaussian_filter1d(activity.power, 4)
+fig2, ax4 = plt.subplots(1,1)
+ax4.plot(pos, optimal_power)
+ax4.plot(activity.distance, smoothed_power)
+ax4.plot(round(pos[-1])*[cp], color='tab:gray', linestyle='dashed')
+ax4.legend([f"Optimal power (avg: {round(np.mean(optimal_power))}W)", f"Smoothed actual power (avg: {round(np.mean(smoothed_power))}W)", "CP"])
+ax4.set_xlabel("Position [m]")
+ax4.set_ylabel("Power [W]")
+ax4_twin = ax4.twinx()
+ax4_twin.set_ylabel('Elevation [m]', color='tab:red')
+ax4_twin.plot(activity.distance, activity.elevation, color='tab:red')
+ax4_twin.tick_params(axis='y', labelcolor='tab:red')
+ax4_twin.legend(["Elevation Profile"])
+plt.show()
+
+
+w_bal_opt = utils.w_prime_balance_ode(optimal_power, t_grid, cp, w_prime)
+w_bal_real = utils.w_prime_balance_ode(smoothed_power, activity.time, cp, w_prime)
+w_bal_opt = [float(elem) for elem in w_bal_opt]
+
+plt.plot(t_grid, w_bal_opt, 'o-')
+plt.plot(activity.time, w_bal_real)
+plt.legend(["W'balance optimal", "W'balance actual"])
+plt.ylabel("W'balance [J]")
+plt.xlabel("Distance [m]")
+plt.show()
+
+difference = [t_grid[i+1]-t_grid[i] for i in range(1,100)]
+print(difference)

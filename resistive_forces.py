@@ -54,10 +54,10 @@ N = 8
 index = np.arange(N)
 width = 0.35
 fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 12))
-print(forces_pot(0.05))
-print(forces_roll())
 plt.xlabel("Velocity [km/h]")
-plt.ylabel("Power [W]")
+ax1.set_ylabel("Power [W]")
+ax2.set_ylabel("Power [W]")
+ax3.set_ylabel("Power [W]")
 ax1.set_title("Force components 5% incline")
 ax2.set_title("Force components flat road")
 ax3.set_title("Force components  5% decline")

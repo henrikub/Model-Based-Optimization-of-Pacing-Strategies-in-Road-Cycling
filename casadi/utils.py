@@ -31,3 +31,20 @@ def calculate_gradient(distance, elevation):
             gradient.append(0)
     gradient.append(0)
     return gradient
+
+def w_prime_balance_ode(power, time, cp, w_prime):
+
+    last = w_prime
+    w_prime_balance = []
+    w_prime_balance.append(w_prime)
+    for i in range(len(power)-1):
+        delta_t = time[i+1] - time[i]
+        if power[i] < cp:
+            new = w_prime - (w_prime - last) * np.power(np.e, -(cp - power[i])*delta_t/w_prime)
+        else:
+            new = last - (power[i] - cp)*delta_t
+
+        w_prime_balance.append(new)
+        last = new
+
+    return w_prime_balance

@@ -67,25 +67,25 @@ def create_multistage_optimization(distance, elevation, num_steps, final_time_gu
 
     # Set boundary conditions
     opti.subject_to(pos[0]==0) # start at position 0
-    opti.subject_to(speed[0]==10) 
+    #opti.subject_to(speed[0]==10) 
     opti.subject_to(pos[-1]==distance[-1])
     opti.subject_to(w_bal[0]==w_prime)
 
     opti.subject_to(T>=0) # time must be positive
     opti.subject_to(speed > 1)
-    #opti.subject_to(U == 1/eta * (m*g*interpolated_slope(pos)*speed + 0.5*Cd*A*speed**3 + b0*speed + b1*speed**2 + my*m*g*speed))
+    opti.subject_to(U == 1/eta * (m*g*interpolated_slope(pos)*speed + 0.5*Cd*A*speed**3 + b0*speed + b1*speed**2 + my*m*g*speed))
 
     # Provide an initial guess for the solver
     opti.set_initial(T, final_time_guess)
     opti.set_initial(speed, 10)
-    opti.set_initial(U, 1/eta * (m*g*interpolated_slope(pos)*speed + 0.5*Cd*A*speed**3 + b0*speed + b1*speed**2 + my*m*g*speed))
+    #opti.set_initial(U, 1/eta * (m*g*interpolated_slope(pos)*speed + 0.5*Cd*A*speed**3 + b0*speed + b1*speed**2 + my*m*g*speed))
 
     opti.solver('ipopt') # set numerical backend
     return opti, T, U, X
 
 
 def solve_multistage_optimization(distance, elevation, final_time_guess, smooth_power_constraint):
-    N = round(distance[-1]/10)
+    N = round(distance[-1]/25)
     opti, T, U, X = create_multistage_optimization(distance, elevation, N, final_time_guess, smooth_power_constraint)
     sol = opti.solve() # actual solve
     return sol, T, U, X
