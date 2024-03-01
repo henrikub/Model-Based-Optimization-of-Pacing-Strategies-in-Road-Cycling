@@ -30,22 +30,31 @@ def create_multistage_optimization(distance, elevation, num_steps, final_time_gu
     w_prime = 26630
     cp = 265
 
-    sigma = 10
+    sigma = 4
     smoothed_elev = gaussian_filter1d(elevation, sigma)
 
     slope = utils.calculate_gradient(distance, smoothed_elev)
 
     interpolated_slope = interpolant('Slope', 'bspline', [distance], slope)
 
-    f = lambda x,u: vertcat(x[1], 
-                        (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3), 
-                        -(u-cp))
+    # f = lambda x,u: vertcat(x[1], 
+    #                     (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3), 
+    #                     -(u-cp))
 
     # With w'bal ODE as physiological model 
     # f = lambda x,u: vertcat(x[1], 
     #                        (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3),
-    #                        -(u-cp)*(1-utils.sigmoid(u, cp, 3)) + (1-x[2]/w_prime)*(cp-u)*utils.sigmoid(u, cp, 3)) 
+    #                        if_else(u >= cp, -(u-cp), (1 - x[2]/w_prime)*(cp-u))) 
+    
 
+    f = lambda x,u: vertcat(x[1], 
+                           (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3),
+                           -(u-cp)*(1 - 1/(1+exp(-(u-cp)/5)) + (1-x[2]/w_prime)*(cp-u)*1/(1+exp(-(u-cp)/5))))
+    
+    print(X[1].size())
+    print((1/X[1] * 1/(m + Iw/r**2)) * (eta*U - my*m*g*X[1] - m*g*interpolated_slope(X[0])*X[1] - b0*X[1] - b1*X[1]**2 - 0.5*Cd*rho*A*X[1]**3).size())
+    print((U-cp).size())
+    
     dt = T/N 
     for k in range(N): 
         k1 = f(X[:,k], U[:,k])
@@ -122,8 +131,8 @@ activity.remove_unactive_period(200)
 
 
 time_initial_guess = activity.distance[-1]/1000 * 120
-N = round(activity.distance[-1]/10)
-sol, T, U, X = solve_multistage_optimization(activity.distance, activity.elevation, time_initial_guess, N, True)
+N = round(activity.distance[-1]/20)
+sol, T, U, X = solve_multistage_optimization(activity.distance, activity.elevation, time_initial_guess, N, False)
 
 
 cp = 265

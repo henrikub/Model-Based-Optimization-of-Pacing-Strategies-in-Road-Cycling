@@ -5,6 +5,7 @@ from activity_reader_tcx.activity_reader import *
 import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter1d
 from w_bal import *
+import utils
 
 
 def bicycle_update(t, x, u, params={}):
@@ -44,11 +45,12 @@ def bicycle_update(t, x, u, params={}):
     v = x[1]
     w_bal = x[2]
     power = u[0]
-    dw_bal = 0
-    if power < cp:
-        dw_bal = (1-w_bal/w_prime)*(cp-power)
-    else:
-        dw_bal = -(power - cp)
+    #dw_bal = 0
+    # if power < cp:
+    #     dw_bal = (1-w_bal/w_prime)*(cp-power)
+    # else:
+    #     dw_bal = -(power - cp)
+    dw_bal = -(power-cp)*(1/(1 + np.exp(-(power-cp))) + (1-w_bal/w_prime)*(cp-power) * (1 - 1/(1 + np.exp(-(cp-power)))))
     
     dv = 1/v * 1/(m + Iw/r**2) * (eta*power - m*g*v*slope[int(t)] - my*m*g*v - b0*v - b1*v**2 - 0.5*Cd*rho*A*v**3)
     
@@ -108,6 +110,14 @@ def mse(array1, array2):
     return np.mean(squared_sum)/len(squared_sum)
 
 print(mse(activity.speed, y[1]))
+cp = 265
+w_prime = 26330
+w_bal = w_prime_balance_ode(activity.power, cp, w_prime)
+
+plt.plot(activity.time, w_bal)
+plt.plot(t, y[2])
+plt.legend(["Actula w'balance", "integrated w'balance"])
+plt.show()
 
 plt.subplot(2,1,1)
 plt.plot(activity.distance, y[1]*3.6)
