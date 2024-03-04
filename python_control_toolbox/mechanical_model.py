@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 from activity_reader_tcx.activity_reader import *
 import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter1d
-from w_bal import *
-import utils
+from w_bal.w_bal import *
+import utils.utils as utils
 
 
 def bicycle_update(t, x, u, params={}):
@@ -50,7 +50,7 @@ def bicycle_update(t, x, u, params={}):
     #     dw_bal = (1-w_bal/w_prime)*(cp-power)
     # else:
     #     dw_bal = -(power - cp)
-    dw_bal = -(power-cp)*(1/(1 + np.exp(-(power-cp))) + (1-w_bal/w_prime)*(cp-power) * (1 - 1/(1 + np.exp(-(cp-power)))))
+    dw_bal = -(power-cp)*(1-1/(1 + np.exp(-(power-cp)/3)) + (1-w_bal/w_prime)*(cp-power) * (1/(1 + np.exp(-(cp-power)/3))))
     
     dv = 1/v * 1/(m + Iw/r**2) * (eta*power - m*g*v*slope[int(t)] - my*m*g*v - b0*v - b1*v**2 - 0.5*Cd*rho*A*v**3)
     
@@ -73,8 +73,8 @@ def calculate_gradient(distance, elevation):
     gradient.append(0)
     return gradient
 
-activity = ActivityReader("Canopies_and_coastlines_time_trial.tcx")
-activity.remove_unactive_period(2000)
+activity = ActivityReader("Mech_isle_loop_time_trial.tcx")
+activity.remove_unactive_period(200)
 
 sigma = 4
 smoothed_elev = gaussian_filter1d(activity.elevation, sigma)
@@ -120,8 +120,8 @@ plt.legend(["Actula w'balance", "integrated w'balance"])
 plt.show()
 
 plt.subplot(2,1,1)
-plt.plot(activity.distance, y[1]*3.6)
-plt.plot(activity.distance, [elem*3.6 for elem in activity.speed])
+plt.plot(t, y[1]*3.6)
+plt.plot(activity.time, [elem*3.6 for elem in activity.speed])
 plt.ylabel("Velocity [km/h]")
 plt.legend(["estimated velocity", "actual velocity"])
 

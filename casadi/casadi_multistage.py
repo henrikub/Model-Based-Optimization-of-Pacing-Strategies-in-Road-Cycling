@@ -1,6 +1,6 @@
 from casadi import *
 import matplotlib.pyplot as plt
-import utils
+import utils.utils as utils
 from activity_reader import ActivityReader
 from scipy.ndimage import gaussian_filter1d
 
@@ -37,24 +37,21 @@ def create_multistage_optimization(distance, elevation, num_steps, final_time_gu
 
     interpolated_slope = interpolant('Slope', 'bspline', [distance], slope)
 
-    # f = lambda x,u: vertcat(x[1], 
-    #                     (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3), 
-    #                     -(u-cp))
+    f = lambda x,u: vertcat(x[1], 
+                        (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3), 
+                        -(u-cp))
 
     # With w'bal ODE as physiological model 
     # f = lambda x,u: vertcat(x[1], 
     #                        (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3),
     #                        if_else(u >= cp, -(u-cp), (1 - x[2]/w_prime)*(cp-u))) 
     
-
-    f = lambda x,u: vertcat(x[1], 
-                           (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3),
-                           -(u-cp)*(1 - 1/(1+exp(-(u-cp)/5)) + (1-x[2]/w_prime)*(cp-u)*1/(1+exp(-(u-cp)/5))))
+    # Denne funker ikke
+    # f = lambda x,u: vertcat(x[1], 
+    #                        (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3),
+    #                        -(u-cp)*(1 - 1/(1+exp(-(u-cp)/3)) + (1-x[2]/w_prime)*(cp-u)*1/(1+exp(-(u-cp)/3))))
     
-    print(X[1].size())
-    print((1/X[1] * 1/(m + Iw/r**2)) * (eta*U - my*m*g*X[1] - m*g*interpolated_slope(X[0])*X[1] - b0*X[1] - b1*X[1]**2 - 0.5*Cd*rho*A*X[1]**3).size())
-    print((U-cp).size())
-    
+    # Runge Kutta 4 method
     dt = T/N 
     for k in range(N): 
         k1 = f(X[:,k], U[:,k])
@@ -64,9 +61,14 @@ def create_multistage_optimization(distance, elevation, num_steps, final_time_gu
         x_next = X[:,k] + dt/6*(k1+2*k2+2*k3+k4)
         opti.subject_to(X[:,k+1] == x_next)
 
+    # Euler method:
+    # for k in range(N):
+    #     x_next = X[:,k] + dt*f(X[:,k], U[:,k])
+    #     opti.subject_to(X[:,k+1] == x_next)
+
     
     if smooth_power_constraint:
-        opti.minimize(T + 0.000005 * sumsqr(U[:,1:] - U[:,:-1])) 
+        opti.minimize(T + 0.0000005 * sumsqr(U[:,1:] - U[:,:-1])) 
     else:
         opti.minimize(T) 
 
@@ -75,9 +77,11 @@ def create_multistage_optimization(distance, elevation, num_steps, final_time_gu
     alpha_c = 0.01
     c_max = 150
     c = 80
+    U_max = 4*(alpha*w_bal + cp)*(c/(alpha_c*w_bal + c_max)*(1-c/(alpha_c*w_bal + c_max)))
+
     # Set the path constraints
     #opti.subject_to(U <= 0.04 * w_bal + cp)
-    opti.subject_to(U <= 4*(alpha*w_bal + cp)*(c/(alpha_c*w_bal + c_max)*(1-c/(alpha_c*w_bal + c_max))))
+    opti.subject_to(U <= U_max)
     opti.subject_to(U >= 0)
     opti.subject_to(opti.bounded(0, w_bal, w_prime))
     opti.subject_to(opti.bounded(1, speed, 25))
@@ -116,12 +120,24 @@ activity = ActivityReader("Mech_isle_loop_time_trial.tcx")
 #activity = ActivityReader("Hilly_route.tcx")
 activity.remove_unactive_period(200)
 
-# print(len(activity.distance))
-# activity.distance = utils.remove_every_other_value(activity.distance)
-# activity.time = utils.remove_every_other_value(activity.time)
-# activity.elevation = utils.remove_every_other_value(activity.elevation)
-# activity.power = utils.remove_every_other_value(activity.power)
-# print(len(activity.distance))
+print(len(activity.distance))
+activity.distance = utils.remove_every_other_value(activity.distance)
+activity.time = utils.remove_every_other_value(activity.time)
+activity.elevation = utils.remove_every_other_value(activity.elevation)
+activity.power = utils.remove_every_other_value(activity.power)
+print(len(activity.distance))
+
+activity.distance = utils.remove_every_other_value(activity.distance)
+activity.time = utils.remove_every_other_value(activity.time)
+activity.elevation = utils.remove_every_other_value(activity.elevation)
+activity.power = utils.remove_every_other_value(activity.power)
+print(len(activity.distance))
+
+activity.distance = utils.remove_every_other_value(activity.distance)
+activity.time = utils.remove_every_other_value(activity.time)
+activity.elevation = utils.remove_every_other_value(activity.elevation)
+activity.power = utils.remove_every_other_value(activity.power)
+print(len(activity.distance))
 
 # activity.distance = utils.remove_every_other_value(activity.distance)
 # activity.time = utils.remove_every_other_value(activity.time)
@@ -129,11 +145,15 @@ activity.remove_unactive_period(200)
 # activity.power = utils.remove_every_other_value(activity.power)
 # print(len(activity.distance))
 
+# time_initial_guess = activity.distance[-1]/1000 * 120
+# N = round(activity.distance[-1]/15)
+#sol, T, U, X = solve_multistage_optimization(activity.distance, activity.elevation, time_initial_guess, N, True)
 
-time_initial_guess = activity.distance[-1]/1000 * 120
-N = round(activity.distance[-1]/20)
-sol, T, U, X = solve_multistage_optimization(activity.distance, activity.elevation, time_initial_guess, N, False)
-
+# UCI Worlds course
+distance = [0, 1400, 2700, 4800, 6100, 6400, 8000, 9200, 10100, 10300, 10500, 11900, 12600, 12900, 13400, 13700, 13900, 14300, 14900, 15700, 16200]
+elevation = [55, 54, 64, 63, 58, 52, 55, 8, 6, 10, 5, 7, 47, 46, 19, 46, 43, 13, 8, 50, 54]
+N = round(distance[-1]/1000*120)
+sol, T, U, X = solve_multistage_optimization(distance, elevation, N, 1000, True)
 
 cp = 265
 w_prime = 26630
@@ -162,7 +182,7 @@ ax[0].plot(round(pos[-1])*[cp], color='tab:gray', linestyle='dashed')
 ax[0].legend(["Maximum attainable power", "Optimal power output", "CP"])
 ax1_twin = ax[0].twinx()
 ax1_twin.set_ylabel('Elevation [m]', color='tab:red')
-ax1_twin.plot(activity.distance, activity.elevation, color='tab:red')
+ax1_twin.plot(distance, elevation, color='tab:red')
 ax1_twin.tick_params(axis='y', labelcolor='tab:red')
 ax1_twin.legend(["Elevation Profile"])
 

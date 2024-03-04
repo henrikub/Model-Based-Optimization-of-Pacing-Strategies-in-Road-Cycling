@@ -1,6 +1,6 @@
 from casadi import *
 import matplotlib.pyplot as plt
-import utils
+import utils.utils as utils
 from activity_reader import ActivityReader
 from scipy.ndimage import gaussian_filter1d
 
