@@ -19,10 +19,6 @@ activity.distance = utils.remove_every_other_value(activity.distance)
 activity.time = utils.remove_every_other_value(activity.time)
 activity.elevation = utils.remove_every_other_value(activity.elevation)
 activity.power = utils.remove_every_other_value(activity.power)
-activity.distance = utils.remove_every_other_value(activity.distance)
-activity.time = utils.remove_every_other_value(activity.time)
-activity.elevation = utils.remove_every_other_value(activity.elevation)
-activity.power = utils.remove_every_other_value(activity.power)
 
 print(len(activity.distance))
 
@@ -31,8 +27,8 @@ distance = activity.distance
 elevation = activity.elevation
 
 # UCI Worlds course
-# distance = [0, 1400, 2700, 4800, 6100, 6400, 8000, 9200, 10100, 10300, 10500, 11900, 12600, 12900, 13400, 13700, 13900, 14300, 14900, 15700, 16200]
-# elevation = [55, 54, 64, 63, 58, 52, 55, 8, 6, 10, 5, 7, 47, 46, 19, 46, 43, 13, 8, 50, 54]
+distance = [0, 1400, 2700, 4800, 6100, 6400, 8000, 9200, 10100, 10300, 10500, 11900, 12600, 12900, 13400, 13700, 13900, 14300, 14900, 15700, 16200]
+elevation = [55, 54, 64, 63, 58, 52, 55, 8, 6, 10, 5, 7, 47, 46, 19, 46, 43, 13, 8, 50, 54]
 
 time_initial_guess = round(distance[-1]/1000*120)
 N = round(distance[-1]/20)
