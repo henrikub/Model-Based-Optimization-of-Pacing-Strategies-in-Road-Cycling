@@ -54,4 +54,4 @@ def w_prime_balance_ode(power, time, cp, w_prime):
     return w_prime_balance
 
 def remove_every_other_value(arr):
-    return arr[:-2:2]
+    return arr[:1] + arr[1:-1:2] + arr[-1:]
