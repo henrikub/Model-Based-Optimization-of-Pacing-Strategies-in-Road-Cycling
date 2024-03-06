@@ -41,16 +41,12 @@ A = 0.4
 eta = 1
 w_prime = 26630
 cp = 265
-#s = [0.05, 0]
 track_length = activity.distance[-1]
 
 interpolated_slope = interpolant('Slope', 'bspline', [activity.distance], slope)
 # Set up the objective
 opti.minimize(T) # race in minimal time
 #opti.minimize(T + 0.0005 * sumsqr(U[:,1:] - U[:,:-1]))
-
-#slope = if_else(X[0] <= 2000, 0.07, -0.06)
-#slope = get_slope_arr(s, track_length)
 
 f = lambda x,u: vertcat(x[1], 
                         (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3), 
