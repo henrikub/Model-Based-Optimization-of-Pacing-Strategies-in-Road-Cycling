@@ -51,4 +51,13 @@ class ActivityReader():
         self.distance, self.time, self.elevation, self.latitude, self.longitude, self.heart_rate, self.cadence, self.power, self.speed = [attr[:last_datapoint] for attr in data_attributes]
         
 
+    def remove_period_after(self, dist):
+        end_index = 0
+        for i in range(len(self.distance)):
+            if self.distance[i] >= dist:
+                end_index = i
+                break
 
+            
+        data_attributes = [self.distance, self.time, self.elevation, self.latitude, self.longitude, self.heart_rate, self.cadence, self.power, self.speed]
+        self.distance, self.time, self.elevation, self.latitude, self.longitude, self.heart_rate, self.cadence, self.power, self.speed = [attr[:end_index] for attr in data_attributes]

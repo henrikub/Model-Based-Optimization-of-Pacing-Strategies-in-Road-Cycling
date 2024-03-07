@@ -7,6 +7,10 @@ import utils.utils as u
 activity = ActivityReader("Legends_and_lava.tcx")
 activity.remove_unactive_period(400)
 
+print(len(activity.distance), len(activity.cadence))
+activity.remove_period_after(5000)
+print(len(activity.distance), len(activity.cadence))
+
 # dist = [elem for elem in activity.distance if elem < 25000]
 # elev = activity.elevation[0:len(dist)]
 

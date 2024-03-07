@@ -17,7 +17,7 @@ def plot_optimization_results(sol, U, X, T, distance, elevation):
 
     ax[0].set_title(f"The optimal time is {round(optimal_time/60, 2)} min")
     ax[0].set_ylabel("Power [W]")
-    ax[0].set_ylim(0,max(optimal_power)+10)
+    ax[0].set_ylim(0,max(max_power)+10)
     ax[0].plot(pos, max_power)
     ax[0].plot(pos, optimal_power)
     ax[0].plot(round(pos[-1])*[cp], color='tab:gray', linestyle='dashed')

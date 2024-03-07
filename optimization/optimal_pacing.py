@@ -158,7 +158,7 @@ def solve_opt_warmstart(distance, elevation, num_steps, final_time_guess, power_
             opti.subject_to(X[:,k+1] == x_next)
     
     if smooth_power_constraint:
-        opti.minimize(T + 0.000005 * sumsqr(U[:,1:] - U[:,:-1])) 
+        opti.minimize(T + 0.0005 * sumsqr(U[:,1:] - U[:,:-1])) 
     else:
         opti.minimize(T) 
 

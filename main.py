@@ -4,11 +4,20 @@ import activity_reader_tcx.activity_reader as act
 from plotting import optimization_plots
 import casadi as ca
 
-activity = act.ActivityReader("Mech_isle_loop_time_trial.tcx")
+# activity = act.ActivityReader("Mech_isle_loop_time_trial.tcx")
+# activity.remove_unactive_period(200)
+                                
 #activity = act.ActivityReader("Greater_london_flat_race.tcx")
-#activity = act.ActivityReader("Canopies_and_coastlines_time_trial.tcx")
-#activity = act.ActivityReader("Hilly_route.tcx")
-activity.remove_unactive_period(200)
+                                
+# activity = act.ActivityReader("Canopies_and_coastlines_time_trial.tcx")
+# activity.remove_period_after(27800)
+                                
+
+# activity = act.ActivityReader("Hilly_route.tcx")
+
+activity = act.ActivityReader("Downtown_titans.tcx")
+activity.remove_period_after(24600)
+
 
 distance = activity.distance
 elevation = activity.elevation
@@ -29,18 +38,21 @@ print(len(distance))
 # elevation = [55, 54, 64, 63, 58, 52, 55, 8, 6, 10, 5, 7, 47, 46, 19, 46, 43, 13, 8, 50, 54]
 
 time_initial_guess = round(distance[-1]/1000*120)
-N = round(distance[-1]/15)
+N = round(distance[-1]/5)
 cp = 265
 
 init_sol, opti, T, U, X = opt.solve_opt(distance, elevation, N, time_initial_guess, cp, solver='ipopt', 
                                         smooth_power_constraint=True, w_bal_ode=False, euler_method=False)
 optimization_plots.plot_optimization_results(init_sol, U, X, T, distance, elevation)
 
-# dist = utils.remove_every_other_value(activity.distance)
-# elev = utils.remove_every_other_value(activity.elevation)
-
 sol, opti, T, U, X = opt.solve_opt_warmstart(activity.distance, activity.elevation, N, 
                                              init_sol.value(T), init_sol.value(U), init_sol.value(X[0,:]), 
                                              init_sol.value(X[1,:]), init_sol.value(X[2,:]), solver='ipopt', 
                                              smooth_power_constraint=True, w_bal_ode=False, euler_method=False)
 optimization_plots.plot_optimization_results(sol, U, X, T, activity.distance, activity.elevation)
+
+# sol, opti, T, U, X = opt.solve_opt_warmstart(activity.distance, activity.elevation, N, 
+#                                              sol.value(T), sol.value(U), sol.value(X[0,:]), 
+#                                              sol.value(X[1,:]), sol.value(X[2,:]), solver='ipopt', 
+#                                              smooth_power_constraint=True, w_bal_ode=False, euler_method=False)
+# optimization_plots.plot_optimization_results(sol, U, X, T, activity.distance, activity.elevation)
