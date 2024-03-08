@@ -1,10 +1,10 @@
-from casadi import *
+import casadi as ca
 from scipy.ndimage import gaussian_filter1d
 import utils.utils as utils
 
 def solve_opt(distance, elevation, num_steps, final_time_guess, power_init_guess, solver, smooth_power_constraint, w_bal_ode, euler_method):
     N = num_steps
-    opti = Opti()
+    opti = ca.Opti()
     X = opti.variable(3, N+1)
     pos = X[0,:]
     speed = X[1,:]
@@ -33,14 +33,18 @@ def solve_opt(distance, elevation, num_steps, final_time_guess, power_init_guess
 
     slope = utils.calculate_gradient(distance, smoothed_elev)
 
-    interpolated_slope = interpolant('Slope', 'bspline', [distance], slope)
+    interpolated_slope = ca.interpolant('Slope', 'bspline', [distance], slope)
 
     if w_bal_ode:
-        f = lambda x,u: vertcat(x[1], 
+        # f = lambda x,u: ca.vertcat(x[1], 
+        #             (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3),
+        #             ca.if_else(u >= cp, -(u-cp), (1 - x[2]/w_prime)*(cp-u))) 
+        f = lambda x,u: ca.vertcat(x[1], 
                     (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3),
-                    if_else(u >= cp, -(u-cp), (1 - x[2]/w_prime)*(cp-u))) 
+                    utils.smooth_derivative(u, cp, x, w_prime)) 
+
     else:
-        f = lambda x,u: vertcat(x[1], 
+        f = lambda x,u: ca.vertcat(x[1], 
                     (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3), 
                     -(u-cp))
     
@@ -61,7 +65,7 @@ def solve_opt(distance, elevation, num_steps, final_time_guess, power_init_guess
             opti.subject_to(X[:,k+1] == x_next)
     
     if smooth_power_constraint:
-        opti.minimize(T + 0.000005 * sumsqr(U[:,1:] - U[:,:-1])) 
+        opti.minimize(T + 0.05 * ca.sumsqr(U[:,1:] - U[:,:-1])) 
     else:
         opti.minimize(T) 
 
@@ -101,7 +105,7 @@ def solve_opt(distance, elevation, num_steps, final_time_guess, power_init_guess
 
 def solve_opt_warmstart(distance, elevation, num_steps, final_time_guess, power_init, pos_init, speed_init, w_bal_init, solver, smooth_power_constraint, w_bal_ode, euler_method):
     N = num_steps
-    opti = Opti()
+    opti = ca.Opti()
     X = opti.variable(3, N+1)
     pos = X[0,:]
     speed = X[1,:]
@@ -129,15 +133,19 @@ def solve_opt_warmstart(distance, elevation, num_steps, final_time_guess, power_
     smoothed_elev = gaussian_filter1d(elevation, sigma)
 
     slope = utils.calculate_gradient(distance, smoothed_elev)
+    print(distance)
 
-    interpolated_slope = interpolant('Slope', 'bspline', [distance], slope)
+    interpolated_slope = ca.interpolant('Slope', 'bspline', [distance], slope)
 
     if w_bal_ode:
-        f = lambda x,u: vertcat(x[1], 
+        # f = lambda x,u: ca.vertcat(x[1], 
+        #             (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3),
+        #             ca.if_else(u >= cp, -(u-cp), (1 - x[2]/w_prime)*(cp-u))) 
+        f = lambda x,u: ca.vertcat(x[1], 
                     (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3),
-                    if_else(u >= cp, -(u-cp), (1 - x[2]/w_prime)*(cp-u))) 
+                    utils.smooth_derivative(u, cp, x, w_prime))     
     else:
-        f = lambda x,u: vertcat(x[1], 
+        f = lambda x,u: ca.vertcat(x[1], 
                     (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3), 
                     -(u-cp))
     
@@ -158,7 +166,7 @@ def solve_opt_warmstart(distance, elevation, num_steps, final_time_guess, power_
             opti.subject_to(X[:,k+1] == x_next)
     
     if smooth_power_constraint:
-        opti.minimize(T + 0.0005 * sumsqr(U[:,1:] - U[:,:-1])) 
+        opti.minimize(T + 0.05 * ca.sumsqr(U[:,1:] - U[:,:-1])) 
     else:
         opti.minimize(T) 
 
@@ -192,7 +200,7 @@ def solve_opt_warmstart(distance, elevation, num_steps, final_time_guess, power_
     opti.set_initial(U, power_init)
     
     p_opts = {"expand": False}
-    s_opts = {"max_iter": 6000}
-    opti.solver(solver) 
+    s_opts = {"max_iter": 20000}
+    opti.solver(solver, p_opts, s_opts) 
     sol = opti.solve()
     return sol, opti, T, U, X

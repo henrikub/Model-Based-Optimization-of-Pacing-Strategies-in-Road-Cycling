@@ -37,7 +37,6 @@ def calculate_gradient(distance, elevation):
     return gradient
 
 def w_prime_balance_ode(power, time, cp, w_prime):
-
     last = w_prime
     w_prime_balance = []
     w_prime_balance.append(w_prime)
@@ -55,3 +54,21 @@ def w_prime_balance_ode(power, time, cp, w_prime):
 
 def remove_every_other_value(arr):
     return arr[:1] + arr[1:-1:2] + arr[-1:]
+
+def w_prime_balance_simple(power, time, cp, w_prime):
+    last = w_prime
+    w_prime_balance = []
+    w_prime_balance.append(w_prime)
+    for i in range(len(power)-1):
+        delta_t = time[i+1]-time[i]
+        new = last - (power[i] - cp)*delta_t
+        w_prime_balance.append(new)
+        last = new
+    return w_prime_balance
+
+
+def smooth_derivative(u, cp, x, w_prime, smooth_factor=0.1):
+    transition = ca.tanh(smooth_factor * (u - cp))
+    transition = 0.5 * (transition + 1)
+    
+    return transition * (-(u - cp)) + (1 - transition) * ((1 - x[2]/w_prime)*(cp - u))
