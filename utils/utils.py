@@ -18,12 +18,6 @@ def sigmoid(x, x0, a):
 def casadi_sigmoid(x, x0, a):
     return 1/(1 + ca.exp(-(x-x0)/a))
 
-def get_slope_arr(slopes, lengths):
-    slope_arr = []
-    for i in range(len(slopes)):
-        slope_arr += lengths[i]*[slopes[i]]
-    return slope_arr
-
 def calculate_gradient(distance, elevation):
     gradient = []
     for i in range(len(distance)-1):

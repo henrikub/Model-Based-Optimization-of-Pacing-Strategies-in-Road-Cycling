@@ -65,7 +65,7 @@ def solve_opt(distance, elevation, num_steps, final_time_guess, power_init_guess
             opti.subject_to(X[:,k+1] == x_next)
     
     if smooth_power_constraint:
-        opti.minimize(T + 0.05 * ca.sumsqr(U[:,1:] - U[:,:-1])) 
+        opti.minimize(T + 0.005 * ca.sumsqr(U[:,1:] - U[:,:-1])) 
     else:
         opti.minimize(T) 
 
@@ -133,8 +133,6 @@ def solve_opt_warmstart(distance, elevation, num_steps, final_time_guess, power_
     smoothed_elev = gaussian_filter1d(elevation, sigma)
 
     slope = utils.calculate_gradient(distance, smoothed_elev)
-    print(distance)
-
     interpolated_slope = ca.interpolant('Slope', 'bspline', [distance], slope)
 
     if w_bal_ode:
@@ -166,7 +164,7 @@ def solve_opt_warmstart(distance, elevation, num_steps, final_time_guess, power_
             opti.subject_to(X[:,k+1] == x_next)
     
     if smooth_power_constraint:
-        opti.minimize(T + 0.05 * ca.sumsqr(U[:,1:] - U[:,:-1])) 
+        opti.minimize(T + 0.005 * ca.sumsqr(U[:,1:] - U[:,:-1])) 
     else:
         opti.minimize(T) 
 
