@@ -49,6 +49,12 @@ def w_prime_balance_ode(power, time, cp, w_prime):
 def remove_every_other_value(arr):
     return arr[:1] + arr[1:-1:2] + arr[-1:]
 
+def simplify_track(distance, elevation):
+    for _ in range(4):
+        distance = remove_every_other_value(distance)
+        elevation = remove_every_other_value(elevation)
+    return distance, elevation
+
 def w_prime_balance_simple(power, time, cp, w_prime):
     last = w_prime
     w_prime_balance = []

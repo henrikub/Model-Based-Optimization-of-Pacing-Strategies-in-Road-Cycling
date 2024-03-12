@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import datetime
 
 def plot_optimization_results(sol, U, X, T, distance, elevation):
     cp = 265
@@ -15,7 +16,7 @@ def plot_optimization_results(sol, U, X, T, distance, elevation):
     max_power = 4*(alpha*w_bal + cp)*(c/(alpha_c*w_bal + c_max)*(1-c/(alpha_c*w_bal + c_max)))
     fig, ax = plt.subplots(3,1)
 
-    ax[0].set_title(f"The optimal time is {round(optimal_time/60, 2)} min")
+    ax[0].set_title(f"The optimal time is {str(datetime.timedelta(seconds=round(optimal_time)))}")
     ax[0].set_ylabel("Power [W]")
     ax[0].set_ylim(0,max(max_power)+10)
     ax[0].plot(pos, max_power)
