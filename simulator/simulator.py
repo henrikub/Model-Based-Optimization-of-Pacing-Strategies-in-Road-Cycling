@@ -33,7 +33,7 @@ def simulate_sys(power, time, x0, distance, elevation, params):
     def system_dynamics(x, u):
         return ca.vertcat(x[1], 
                 (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - mu*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3),
-                utils.smooth_derivative(u, cp, x, w_prime)) 
+                utils.smooth_w_balance_ode_derivative(u, cp, x, w_prime)) 
 
     tf = time[-1]
     N = len(time)

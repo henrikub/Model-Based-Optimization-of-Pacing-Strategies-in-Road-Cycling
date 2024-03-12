@@ -1,16 +1,6 @@
 import numpy as np
 import casadi as ca
 
-def calculate_elevation_profile(slopes, lengths, start_elevation):
-    angles =  []
-    for i, s in enumerate(slopes):
-        angles += lengths[i]*[np.arctan(s)]
-
-    elevation = np.zeros(sum(lengths))
-    elevation[0] = start_elevation
-    for i in range(1,len(elevation)):
-        elevation[i] = elevation[i-1] + np.sin(angles[i])
-    return elevation
 
 def sigmoid(x, x0, a):
     return 1/(1 + np.power(np.e, (-(x-x0)/a)))
@@ -66,8 +56,7 @@ def w_prime_balance_simple(power, time, cp, w_prime):
         last = new
     return w_prime_balance
 
-
-def smooth_derivative(u, cp, x, w_prime, smooth_factor=0.1):
+def smooth_w_balance_ode_derivative(u, cp, x, w_prime, smooth_factor=0.1):
     transition = ca.tanh(smooth_factor * (u - cp))
     transition = 0.5 * (transition + 1)
     
