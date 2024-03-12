@@ -2,7 +2,7 @@ import casadi as ca
 from scipy.ndimage import gaussian_filter1d
 import utils.utils as utils
 
-def solve_opt(distance, elevation, num_steps, final_time_guess, power_init_guess, solver, smooth_power_constraint, w_bal_ode, euler_method):
+def solve_opt(distance, elevation, num_steps, final_time_guess, power_init_guess, params, solver, smooth_power_constraint, w_bal_ode, euler_method):
     N = num_steps
     opti = ca.Opti()
     X = opti.variable(3, N+1)
@@ -12,21 +12,24 @@ def solve_opt(distance, elevation, num_steps, final_time_guess, power_init_guess
     U = opti.variable(1,N+1)
     T = opti.variable()
 
-    mass_rider = 78
-    mass_bike = 8
+    # Mechanical model params
+    mass_rider = params.get("mass_rider")
+    mass_bike = params.get("mass_bike")
     m = mass_bike + mass_rider
-    g = 9.81
-    my = 0.004
-    b0 = 0.091
-    b1 = 0.0087
-    Iw = 0.14
-    r = 0.33
-    Cd = 0.7
-    rho = 1.2
-    A = 0.4
-    eta = 1
-    w_prime = 26630
-    cp = 265
+    g = params.get("g")
+    mu = params.get("mu")
+    b0 = params.get("b0")
+    b1 = params.get("b1")
+    Iw = params.get("Iw")
+    r = params.get("r")
+    Cd = params.get("Cd")
+    rho = params.get("rho")
+    A = params.get("A")
+    eta = params.get("eta")
+
+    #Physiological model params
+    w_prime = params.get("w_prime")
+    cp = params.get("cp")
 
     sigma = 4
     smoothed_elev = gaussian_filter1d(elevation, sigma)
@@ -35,20 +38,15 @@ def solve_opt(distance, elevation, num_steps, final_time_guess, power_init_guess
 
     interpolated_slope = ca.interpolant('Slope', 'bspline', [distance], slope)
 
-    if w_bal_ode:
-        # f = lambda x,u: ca.vertcat(x[1], 
-        #             (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3),
-        #             ca.if_else(u >= cp, -(u-cp), (1 - x[2]/w_prime)*(cp-u))) 
+    if w_bal_ode: 
         f = lambda x,u: ca.vertcat(x[1], 
-                    (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3),
+                    (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - mu*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3),
                     utils.smooth_derivative(u, cp, x, w_prime)) 
-
     else:
         f = lambda x,u: ca.vertcat(x[1], 
-                    (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3), 
+                    (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - mu*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3), 
                     -(u-cp))
     
-
     dt = T/N
     if euler_method:
         for k in range(N):
@@ -69,15 +67,14 @@ def solve_opt(distance, elevation, num_steps, final_time_guess, power_init_guess
     else:
         opti.minimize(T) 
 
-
-    alpha = 0.03
-    alpha_c = 0.01
-    c_max = 150
-    c = 80
+    # Max power constraint params
+    alpha = params.get("alpha")
+    alpha_c = params.get("alpha_c")
+    c_max = params.get("c_max")
+    c = params.get("c")
     U_max = 4*(alpha*w_bal + cp)*(c/(alpha_c*w_bal + c_max)*(1-c/(alpha_c*w_bal + c_max)))
 
     # Set the path constraints
-    #opti.subject_to(U <= 0.04 * w_bal + cp)
     opti.subject_to(U <= U_max)
     opti.subject_to(U >= 0)
     opti.subject_to(opti.bounded(0, w_bal, w_prime))
@@ -96,14 +93,12 @@ def solve_opt(distance, elevation, num_steps, final_time_guess, power_init_guess
     opti.set_initial(speed, 10)
     opti.set_initial(U, power_init_guess)
     
-    p_opts = {"expand": False}
-    s_opts = {"max_iter": 6000}
     opti.solver(solver) 
     sol = opti.solve()
     return sol, opti, T, U, X
 
 
-def solve_opt_warmstart(distance, elevation, num_steps, final_time_guess, power_init, pos_init, speed_init, w_bal_init, solver, smooth_power_constraint, w_bal_ode, euler_method):
+def solve_opt_warmstart(distance, elevation, num_steps, final_time_guess, power_init, pos_init, speed_init, w_bal_init, params, solver, smooth_power_constraint, w_bal_ode, euler_method):
     N = num_steps
     opti = ca.Opti()
     X = opti.variable(3, N+1)
@@ -113,21 +108,24 @@ def solve_opt_warmstart(distance, elevation, num_steps, final_time_guess, power_
     U = opti.variable(1,N+1)
     T = opti.variable()
 
-    mass_rider = 78
-    mass_bike = 8
+    # Mechanical model params
+    mass_rider = params.get("mass_rider")
+    mass_bike = params.get("mass_bike")
     m = mass_bike + mass_rider
-    g = 9.81
-    my = 0.004
-    b0 = 0.091
-    b1 = 0.0087
-    Iw = 0.14
-    r = 0.33
-    Cd = 0.7
-    rho = 1.2
-    A = 0.4
-    eta = 1
-    w_prime = 26630
-    cp = 265
+    g = params.get("g")
+    mu = params.get("mu")
+    b0 = params.get("b0")
+    b1 = params.get("b1")
+    Iw = params.get("Iw")
+    r = params.get("r")
+    Cd = params.get("Cd")
+    rho = params.get("rho")
+    A = params.get("A")
+    eta = params.get("eta")
+
+    #Physiological model params
+    w_prime = params.get("w_prime")
+    cp = params.get("cp")
 
     sigma = 4
     smoothed_elev = gaussian_filter1d(elevation, sigma)
@@ -135,16 +133,13 @@ def solve_opt_warmstart(distance, elevation, num_steps, final_time_guess, power_
     slope = utils.calculate_gradient(distance, smoothed_elev)
     interpolated_slope = ca.interpolant('Slope', 'bspline', [distance], slope)
 
-    if w_bal_ode:
-        # f = lambda x,u: ca.vertcat(x[1], 
-        #             (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3),
-        #             ca.if_else(u >= cp, -(u-cp), (1 - x[2]/w_prime)*(cp-u))) 
+    if w_bal_ode: 
         f = lambda x,u: ca.vertcat(x[1], 
-                    (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3),
+                    (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - mu*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3),
                     utils.smooth_derivative(u, cp, x, w_prime))     
     else:
         f = lambda x,u: ca.vertcat(x[1], 
-                    (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - my*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3), 
+                    (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - mu*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3), 
                     -(u-cp))
     
 
@@ -169,10 +164,11 @@ def solve_opt_warmstart(distance, elevation, num_steps, final_time_guess, power_
         opti.minimize(T) 
 
 
-    alpha = 0.03
-    alpha_c = 0.01
-    c_max = 150
-    c = 80
+    # Max power constraint params
+    alpha = params.get("alpha")
+    alpha_c = params.get("alpha_c")
+    c_max = params.get("c_max")
+    c = params.get("c")
     U_max = 4*(alpha*w_bal + cp)*(c/(alpha_c*w_bal + c_max)*(1-c/(alpha_c*w_bal + c_max)))
 
     # Set the path constraints
