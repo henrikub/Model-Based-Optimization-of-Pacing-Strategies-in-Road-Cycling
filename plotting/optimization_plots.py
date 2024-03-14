@@ -18,7 +18,7 @@ def plot_optimization_results(sol, U, X, T, distance, elevation, params, opt_det
     # opt_time = stats['t_wall_total']
 
     max_power = 4*(alpha*w_bal + cp)*(c/(alpha_c*w_bal + c_max)*(1-c/(alpha_c*w_bal + c_max)))
-    fig, ax = plt.subplots(3,1)
+    fig, ax = plt.subplots(3,1, figsize=(15,10))
 
     ax[0].set_title(f"The optimal time is {str(datetime.timedelta(seconds=round(optimal_time)))}")
     ax[0].set_ylabel("Power [W]")
@@ -54,6 +54,6 @@ def plot_optimization_results(sol, U, X, T, distance, elevation, params, opt_det
     ax3_twin.tick_params(axis='y', labelcolor='tab:red')
     ax3_twin.legend(["Elevation Profile"])
 
-    fig.text(0.5, 0.02, f"Integration method: {opt_details.get('integration_method')}, N = {opt_details.get('N')}, W'balance model: {opt_details.get('w_bal_model')}, iterations: {opt_details.get('iterations')}, time: {round(opt_details.get('opt_time'),1)}s", horizontalalignment="center")
+    fig.text(0.5, 0.02, f"Integration method: {opt_details.get('integration_method')}, points = {len(distance)}, N = {opt_details.get('N')}, W'balance model: {opt_details.get('w_bal_model')}, iterations: {opt_details.get('iterations')}, time: {str(datetime.timedelta(seconds=round(opt_details.get('opt_time'))))}", horizontalalignment="center")
 
     plt.show()

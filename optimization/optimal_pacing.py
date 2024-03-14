@@ -89,7 +89,8 @@ def solve_opt(distance, elevation, params, optimization_opts):
     opti.subject_to(pos[-1]==distance[-1])
     opti.subject_to(w_bal[0]==w_prime)
 
-    opti.subject_to(opti.bounded(0, T, distance[-1]/1000*180)) 
+    # opti.subject_to(opti.bounded(0, T, distance[-1]/1000*180)) 
+    opti.subject_to(T>=0) 
 
     # Provide an initial guess
     opti.set_initial(T, optimization_opts.get("time_initial_guess"))
@@ -140,7 +141,7 @@ def solve_opt_warmstart(distance, elevation, params, optimization_opts, initiali
         f = lambda x,u: ca.vertcat(x[1], 
                     (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - mu*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3),
                     utils.smooth_w_balance_ode_derivative(u, cp, x, w_prime))     
-    elif optimization_opts.get("integration_method") == "RK4":
+    elif optimization_opts.get("w_bal_model") == "Simple":
         f = lambda x,u: ca.vertcat(x[1], 
                     (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - mu*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3), 
                     -(u-cp))
