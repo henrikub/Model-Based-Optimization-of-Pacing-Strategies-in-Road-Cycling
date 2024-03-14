@@ -1,13 +1,12 @@
 import optimization.optimal_pacing as opt
 import utils.utils as utils
 import activity_reader_tcx.activity_reader as act
-from plotting import optimization_plots
+import plotting.optimization_plots as optimization_plots
 import matplotlib.pyplot as plt
 import casadi as ca
 
 activity = act.ActivityReader("Mech_isle_loop_time_trial.tcx")
-activity.remove_unactive_period(200)
-# activity.remove_period_after(4000)
+activity.remove_period_after(4170)
                                 
 # activity = act.ActivityReader("Greater_london_flat_race.tcx")
 # activity.remove_period_after(17500)
@@ -48,45 +47,69 @@ params = {
     'c': 80
 }
 
+
+
 time_initial_guess = round(activity.distance[-1]/1000*120)
 N = round(activity.distance[-1]/5)
 
-init_sol, opti, T, U, X = opt.solve_opt(distance_simplified, elevation_simplified, N, time_initial_guess, params.get('cp'), params, solver='ipopt', 
-                                        smooth_power_constraint=True, w_bal_ode=True, euler_method=False)
-optimization_plots.plot_optimization_results(init_sol, U, X, T, distance_simplified, elevation_simplified)
-print(len(init_sol.value(U)))
+optimization_opts = {
+    "N": N,
+    "time_initial_guess": time_initial_guess,
+    "power_initial_guess": (N+1)*params.get('cp'),
+    "smooth_power_constraint": True,
+    "w_bal_model": "ODE",
+    "integration_method": "Euler",
+    "solver": "ipopt"
+}
 
-sol, opti, T, U, X = opt.solve_opt_warmstart(activity.distance, activity.elevation, N, 
-                                             init_sol.value(T), init_sol.value(U), init_sol.value(X[0,:]), 
-                                             init_sol.value(X[1,:]), init_sol.value(X[2,:]), params, solver='ipopt', 
-                                             smooth_power_constraint=True, w_bal_ode=True, euler_method=False)
-optimization_plots.plot_optimization_results(sol, U, X, T, activity.distance, activity.elevation)
-print(len(sol.value(U)))
+init_sol, opti, T, U, X = opt.solve_opt(distance_simplified, elevation_simplified, params, optimization_opts)
+init_stats = init_sol.stats()
+opt_details = {
+    "N": N,
+    "w_bal_model": optimization_opts.get("w_bal_model"),
+    "integration_method": optimization_opts.get("integration_method"),
+    "time_init_guess": optimization_opts.get("time_initial_guess"),
+    "iterations": init_stats['iter_count'],
+    "opt_time": init_stats['t_wall_total']
+}
+optimization_plots.plot_optimization_results(init_sol, U, X, T, distance_simplified, elevation_simplified, params, opt_details)
 
-t_grid = ca.linspace(0, sol.value(T), N+1)
+initialization = {
+    'pos_init': init_sol.value(X[0,:]),
+    'speed_init': init_sol.value(X[1,:]),
+    'w_bal_init': init_sol.value(X[2,:]),
+    'power_init': init_sol.value(U),
+    'time_init': init_sol.value(T)
+}
 
-w_bal_actual = utils.w_prime_balance_ode(sol.value(U),t_grid, params.get('cp'), params.get('w_prime'))
-w_bal_casadi = sol.value(X[2,:])
-w_bal_actual = [float(elem) for elem in w_bal_actual]
+sol, opti, T, U, X = opt.solve_opt_warmstart(activity.distance, activity.elevation, params, optimization_opts, initialization)
+stats = sol.stats()
+opt_details["iterations"] = stats['iter_count']
+opt_details["opt_time"] = stats['t_wall_total']
+optimization_plots.plot_optimization_results(sol, U, X, T, activity.distance, activity.elevation, params, opt_details)
 
-print(w_bal_actual[-1]-w_bal_casadi[-1])
+# t_grid = ca.linspace(0, sol.value(T), N+1)
 
-fig, ax = plt.subplots()
+# w_bal_actual = utils.w_prime_balance_ode(sol.value(U),t_grid, params.get('cp'), params.get('w_prime'))
+# w_bal_casadi = sol.value(X[2,:])
+# w_bal_actual = [float(elem) for elem in w_bal_actual]
 
-ax.plot(sol.value(X[0,:]), w_bal_actual)
-ax.plot(sol.value(X[0,:]), w_bal_casadi)
-ax.legend(["Actual w_bal", "Casadi w_bal"])
+# fig, ax = plt.subplots()
 
-ax2 = ax.twinx()
-ax2.plot(activity.distance, activity.elevation, color='tab:red')
-ax2.set_ylabel('Elevation [m]', color='tab:red')
-ax.set_ylabel("W'balance [J]")
-ax.set_xlabel("Distance [m]")
-plt.show()
+# ax.plot(sol.value(X[0,:]), w_bal_actual)
+# ax.plot(sol.value(X[0,:]), w_bal_casadi)
+# ax.legend(["Actual w_bal", "Casadi w_bal"])
 
-plt.plot(t_grid, w_bal_actual)
-plt.plot(t_grid, w_bal_casadi)
-plt.legend(["Actual W'bal", "Casadi W'bal"])
-plt.ylabel("W'balance [J]")
-plt.xlabel("Time [s]") 
-plt.show()
+# ax2 = ax.twinx()
+# ax2.plot(activity.distance, activity.elevation, color='tab:red')
+# ax2.set_ylabel('Elevation [m]', color='tab:red')
+# ax.set_ylabel("W'balance [J]")
+# ax.set_xlabel("Distance [m]")
+# plt.show()
+
+# plt.plot(t_grid, w_bal_actual)
+# plt.plot(t_grid, w_bal_casadi)
+# plt.legend(["Actual W'bal", "Casadi W'bal"])
+# plt.ylabel("W'balance [J]")
+# plt.xlabel("Time [s]") 
+# plt.show()

@@ -1,18 +1,22 @@
 import matplotlib.pyplot as plt
 import datetime
 
-def plot_optimization_results(sol, U, X, T, distance, elevation):
-    cp = 265
+def plot_optimization_results(sol, U, X, T, distance, elevation, params, opt_details):
+    cp = params.get("cp")
+    alpha = params.get("alpha")
+    alpha_c = params.get("alpha_c")
+    c_max = params.get("c_max")
+    c = params.get("c")
 
     optimal_power = sol.value(U)
     optimal_time = sol.value(T)
     pos = sol.value(X[0,:])
     velocity = sol.value(X[1,:])
     w_bal = sol.value(X[2,:])
-    alpha = 0.03
-    alpha_c = 0.01
-    c_max = 150
-    c = 80
+
+    # stats = sol.stats()
+    # opt_time = stats['t_wall_total']
+
     max_power = 4*(alpha*w_bal + cp)*(c/(alpha_c*w_bal + c_max)*(1-c/(alpha_c*w_bal + c_max)))
     fig, ax = plt.subplots(3,1)
 
@@ -49,4 +53,7 @@ def plot_optimization_results(sol, U, X, T, distance, elevation):
     ax3_twin.plot(distance, elevation, color='tab:red')
     ax3_twin.tick_params(axis='y', labelcolor='tab:red')
     ax3_twin.legend(["Elevation Profile"])
+
+    fig.text(0.5, 0.02, f"Integration method: {opt_details.get('integration_method')}, N = {opt_details.get('N')}, W'balance model: {opt_details.get('w_bal_model')}, iterations: {opt_details.get('iterations')}, time: {round(opt_details.get('opt_time'),1)}s", horizontalalignment="center")
+
     plt.show()
