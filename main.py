@@ -17,14 +17,14 @@ import casadi as ca
 # activity = act.ActivityReader("Richmond_UCI_worlds.tcx")
 # activity.remove_period_after(16200)
                                 
-# activity = act.ActivityReader("Hilly_route.tcx")
-# activity.remove_period_after(9600)
+activity = act.ActivityReader("Hilly_route.tcx")
+activity.remove_period_after(9600)
 
 # activity = act.ActivityReader("Bologna_tt.tcx")
 # activity.remove_period_after(8000)
 
-activity = act.ActivityReader("Downtown_titans.tcx")
-activity.remove_period_after(24600)
+# activity = act.ActivityReader("Downtown_titans.tcx")
+# activity.remove_period_after(24600)
 
 distance_simplified, elevation_simplified = utils.simplify_track(activity.distance, activity.elevation)
 
@@ -50,8 +50,6 @@ params = {
     'c': 80
 }
 
-
-
 time_initial_guess = round(activity.distance[-1]/1000*120)
 N = round(activity.distance[-1]/5)
 
@@ -60,8 +58,8 @@ optimization_opts = {
     "time_initial_guess": time_initial_guess,
     "power_initial_guess": params.get('cp'),
     "smooth_power_constraint": True,
-    "w_bal_model": "Simple",
-    "integration_method": "RK4",
+    "w_bal_model": "ODE",
+    "integration_method": "Euler",
     "solver": "ipopt"
 }
 
