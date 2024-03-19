@@ -1,6 +1,6 @@
 import numpy as np
 import casadi as ca
-
+import json
 
 def sigmoid(x, x0, a):
     return 1/(1 + np.power(np.e, (-(x-x0)/a)))
@@ -61,3 +61,18 @@ def smooth_w_balance_ode_derivative(u, cp, x, w_prime, smooth_factor=0.1):
     transition = 0.5 * (transition + 1)
     
     return transition * (-(u - cp)) + (1 - transition) * ((1 - x[2]/w_prime)*(cp - u))
+
+def write_json(power, time, distance):
+    power_dict = {
+        'power': power.tolist(),
+        'time': time.tolist(),
+        'distance': distance.tolist()
+    }
+    with open('optimal_power.json','w') as file:
+        json.dump(power_dict, file)
+
+def read_json(filename):
+    obj = {}
+    with open(filename, 'r') as file:
+        obj = json.load(file)
+    return obj

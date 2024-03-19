@@ -51,7 +51,7 @@ params = {
     'c_max': 150,
     'c': 80
 }
-N = round(dist[-1]/5)
+N = round(dist[-1]/10)
 time_guess = dist[-1]/1000*100
 time_grid = np.arange(0, time_guess, N)
 power = len(time_grid)*[params.get("w_prime")/time_guess + params.get("cp")]

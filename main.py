@@ -5,8 +5,8 @@ import plotting.optimization_plots as optimization_plots
 import matplotlib.pyplot as plt
 import casadi as ca
 
-# activity = act.ActivityReader("Mech_isle_loop_time_trial.tcx")
-# activity.remove_period_after(4170)
+activity = act.ActivityReader("Mech_isle_loop_time_trial.tcx")
+activity.remove_period_after(4170)
                                 
 # activity = act.ActivityReader("Greater_london_flat_race.tcx")
 # activity.remove_period_after(17500)
@@ -17,8 +17,8 @@ import casadi as ca
 # activity = act.ActivityReader("Richmond_UCI_worlds.tcx")
 # activity.remove_period_after(16200)
                                 
-activity = act.ActivityReader("Hilly_route.tcx")
-activity.remove_period_after(9600)
+# activity = act.ActivityReader("Hilly_route.tcx")
+# activity.remove_period_after(9600)
 
 # activity = act.ActivityReader("Bologna_tt.tcx")
 # activity.remove_period_after(8000)
@@ -89,7 +89,14 @@ opt_details["iterations"] = stats['iter_count']
 opt_details["opt_time"] = stats['t_wall_total']
 optimization_plots.plot_optimization_results(sol, U, X, T, activity.distance, activity.elevation, params, opt_details)
 
-# t_grid = ca.linspace(0, sol.value(T), N+1)
+t_grid = ca.linspace(0, sol.value(T), N+1)
+
+utils.write_json(sol.value(U), t_grid.full().flatten(), sol.value(X[0,:]))
+
+res = utils.read_json('optimal_power.json')
+
+
+
 
 # w_bal_actual = utils.w_prime_balance_ode(sol.value(U),t_grid, params.get('cp'), params.get('w_prime'))
 # w_bal_casadi = sol.value(X[2,:])

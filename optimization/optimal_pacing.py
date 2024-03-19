@@ -11,6 +11,7 @@ def solve_opt(distance, elevation, params, optimization_opts):
     w_bal = X[2,:]
     U = opti.variable(1,N+1)
     T = opti.variable()
+    # changes = opti.variable(N) 
 
     # Mechanical model params
     mass_rider = params.get("mass_rider")
@@ -66,7 +67,7 @@ def solve_opt(distance, elevation, params, optimization_opts):
         raise ValueError()
     
     if optimization_opts.get("smooth_power_constraint"):
-        opti.minimize(T + 0.00005 * ca.sumsqr(U[:,1:] - U[:,:-1])) 
+        opti.minimize(T + 0.00005 * ca.sumsqr(U[:,1:] - U[:,:-1]))
     else:
         opti.minimize(T) 
 
@@ -76,6 +77,13 @@ def solve_opt(distance, elevation, params, optimization_opts):
     c_max = params.get("c_max")
     c = params.get("c")
     U_max = 4*(alpha*w_bal + cp)*(c/(alpha_c*w_bal + c_max)*(1-c/(alpha_c*w_bal + c_max)))
+
+    # # Constrain number of changes in power
+    # for i in range(N):
+    #     ca.if_else(U[:,i]-U[:,i+1] > 0, changes[i]==1, changes[i]==0)
+
+    # opti.subject_to(opti.bounded(0, ca.sum1(changes), 10))
+
 
     # Set the path constraints
     opti.subject_to(U <= U_max)
@@ -89,15 +97,16 @@ def solve_opt(distance, elevation, params, optimization_opts):
     opti.subject_to(pos[-1]==distance[-1])
     opti.subject_to(w_bal[0]==w_prime)
 
-    # opti.subject_to(opti.bounded(0, T, distance[-1]/1000*180)) 
-    opti.subject_to(T>=0) 
+    opti.subject_to(opti.bounded(0, T, distance[-1]/1000*180)) 
 
     # Provide an initial guess
     opti.set_initial(T, optimization_opts.get("time_initial_guess"))
     opti.set_initial(speed, 10)
     opti.set_initial(U, optimization_opts.get("power_initial_guess"))
     
-    opti.solver(optimization_opts.get("solver")) 
+    p_opts = {"expand": False}
+    s_opts = {"max_iter": 20000}
+    opti.solver('ipopt', p_opts, s_opts)
     sol = opti.solve()
     return sol, opti, T, U, X
 
@@ -178,7 +187,6 @@ def solve_opt_warmstart(distance, elevation, params, optimization_opts, initiali
     U_max = 4*(alpha*w_bal + cp)*(c/(alpha_c*w_bal + c_max)*(1-c/(alpha_c*w_bal + c_max)))
 
     # Set the path constraints
-    #opti.subject_to(U <= 0.04 * w_bal + cp)
     opti.subject_to(U <= U_max)
     opti.subject_to(U >= 0)
     opti.subject_to(opti.bounded(0, w_bal, w_prime))
@@ -201,6 +209,6 @@ def solve_opt_warmstart(distance, elevation, params, optimization_opts, initiali
     
     p_opts = {"expand": False}
     s_opts = {"max_iter": 20000}
-    opti.solver(optimization_opts.get('solver'), p_opts, s_opts) 
+    opti.solver('ipopt', p_opts, s_opts) 
     sol = opti.solve()
     return sol, opti, T, U, X
