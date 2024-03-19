@@ -1,12 +1,58 @@
-// const numeric = require('numeric');
+const numeric = require('numeric');
 
-// const distance = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-// const slope = [0, 0.01, 0.01, 0.02, 0.04, 0.06, 0.06, 0.04, 0.02, 0.0, -0.01]
+import data from './optimal_power.json' assert {type: 'json'};
+const spline = numeric.spline(data.distance, data.power)
 
-// const spline = numeric.spline(distance, slope)
-// const interpolated_spline = spline.at(55)
-// console.log(interpolated_spline)
-console.log('hello')
-import data from './optimal_power.json' assert {type: 'json'}
+window.onload = function() {
+    document.getElementById('displayButton').addEventListener('click', function() {
+        document.getElementById('optimizationResultsContainer').innerText = JSON.stringify(data.power, null, 2);
+    });
+    document.getElementById('hideButton').addEventListener('click', function() {
+        document.getElementById('optimizationResultsContainer').innerText = '';
+    });
+    document.getElementById('inputfield').addEventListener('input', function(event) {
+        const distance = parseFloat(event.target.value);
+        if (!isNaN(distance)) {
+            const optimalPower = spline.at(distance);
+            document.getElementById('optimalPowerContainer').innerText = optimalPower;
+        }
+    });
 
-console.log(data)
+    // document.getElementById('runOptimizationButton').addEventListener('click', async () => {
+    //     const path = "test.py";
+    //     try {
+    //         const response = await fetch('http://127.0.0.1:5000/run-script', {
+    //             method: 'POST',
+    //             headers: {
+    //                 'Content-Type': 'application/json'
+    //             },
+    //             body: JSON.stringify({ path: path })
+    //         });
+    //         if (!response.ok) {  // Check if the request was successful
+    //             throw new Error(`HTTP error! status: ${response.status}`);
+    //         }
+    //         data = await response.json();  // Assign the response to the global 'data' variable
+    //         console.log("Python script ran successfully")
+    //         console.log(data.result);
+            
+
+    //     } catch (error) {
+    //         console.log(error);  // Log any errors
+    //     }
+    // });
+};
+
+
+
+// async function runOptimizationScript() {
+//     const path = "main.py";
+//     const response = await fetch('/run-script', {
+//         method: 'POST',
+//         headers: {
+//             'Content-Type': 'application/json'
+//         },
+//         body: JSON.stringify({ path: path })
+//     });
+//     const data = await response.json();
+//     console.log(data.result);
+// }

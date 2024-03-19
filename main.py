@@ -51,7 +51,7 @@ params = {
 }
 
 time_initial_guess = round(activity.distance[-1]/1000*120)
-N = round(activity.distance[-1]/5)
+N = round(activity.distance[-1]/10)
 
 optimization_opts = {
     "N": N,
