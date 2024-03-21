@@ -11,7 +11,6 @@ def solve_opt(distance, elevation, params, optimization_opts):
     w_bal = X[2,:]
     U = opti.variable(1,N+1)
     T = opti.variable()
-    # changes = opti.variable(N) 
 
     # Mechanical model params
     mass_rider = params.get("mass_rider")
@@ -77,12 +76,6 @@ def solve_opt(distance, elevation, params, optimization_opts):
     c_max = params.get("c_max")
     c = params.get("c")
     U_max = 4*(alpha*w_bal + cp)*(c/(alpha_c*w_bal + c_max)*(1-c/(alpha_c*w_bal + c_max)))
-
-    # # Constrain number of changes in power
-    # for i in range(N):
-    #     ca.if_else(U[:,i]-U[:,i+1] > 0, changes[i]==1, changes[i]==0)
-
-    # opti.subject_to(opti.bounded(0, ca.sum1(changes), 10))
 
 
     # Set the path constraints

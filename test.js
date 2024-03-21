@@ -1,7 +1,7 @@
-const numeric = require('numeric');
+// const numeric = require('numeric');
 
 import data from './optimal_power.json' assert {type: 'json'};
-const spline = numeric.spline(data.distance, data.power)
+// const spline = numeric.spline(data.distance, data.power)
 
 window.onload = function() {
     document.getElementById('displayButton').addEventListener('click', function() {
@@ -13,7 +13,7 @@ window.onload = function() {
     document.getElementById('inputfield').addEventListener('input', function(event) {
         const distance = parseFloat(event.target.value);
         if (!isNaN(distance)) {
-            const optimalPower = spline.at(distance);
+            let optimalPower = spline.at(distance);
             document.getElementById('optimalPowerContainer').innerText = optimalPower;
         }
     });

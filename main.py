@@ -96,8 +96,6 @@ utils.write_json(sol.value(U), t_grid.full().flatten(), sol.value(X[0,:]))
 res = utils.read_json('optimal_power.json')
 
 
-
-
 # w_bal_actual = utils.w_prime_balance_ode(sol.value(U),t_grid, params.get('cp'), params.get('w_prime'))
 # w_bal_casadi = sol.value(X[2,:])
 # w_bal_actual = [float(elem) for elem in w_bal_actual]
