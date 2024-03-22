@@ -1,58 +1,34 @@
-// const numeric = require('numeric');
-
-import data from './optimal_power.json' assert {type: 'json'};
-// const spline = numeric.spline(data.distance, data.power)
-
-window.onload = function() {
-    document.getElementById('displayButton').addEventListener('click', function() {
-        document.getElementById('optimizationResultsContainer').innerText = JSON.stringify(data.power, null, 2);
-    });
-    document.getElementById('hideButton').addEventListener('click', function() {
-        document.getElementById('optimizationResultsContainer').innerText = '';
-    });
-    document.getElementById('inputfield').addEventListener('input', function(event) {
-        const distance = parseFloat(event.target.value);
-        if (!isNaN(distance)) {
-            let optimalPower = spline.at(distance);
-            document.getElementById('optimalPowerContainer').innerText = optimalPower;
+const numeric = require('numeric');
+const distance = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+const power = [300, 290, 290, 299, 280, 275, 275, 275, 260, 240, 234]
+const spline = numeric.spline(distance, power)
+const interpolated_spline = spline.at(5)
+console.log(interpolated_spline)
+function linear_interpolation(x, x_arr, y_arr) {
+    let i = 0;
+    let x1, x2, y1, y2;
+    while (x > x_arr[i+1]) {
+        
+        x1 = x_arr[i];
+        y1 = y_arr[i];
+        x2 = x_arr[i+1];
+        y2 = y_arr[i+1];
+        i++;
+    }
+    console.log(x2, x1)
+    return y1 + ((x-x1) * (y2-y1)) / (x2-x1)
+}
+console.log(linear_interpolation(13, distance, power))
+function get_target_power(distance, distance_arr, power_arr) {
+    let index = 0;
+    let min_diff = Math.abs(distance - distance_arr[0]);
+    for (let i = 1; i < distance_arr.length; i++) {
+        let difference = Math.abs(distance - distance_arr[i]);
+        if (difference < min_diff) {
+            min_diff = difference;
+            index = i;
         }
-    });
-
-    // document.getElementById('runOptimizationButton').addEventListener('click', async () => {
-    //     const path = "test.py";
-    //     try {
-    //         const response = await fetch('http://127.0.0.1:5000/run-script', {
-    //             method: 'POST',
-    //             headers: {
-    //                 'Content-Type': 'application/json'
-    //             },
-    //             body: JSON.stringify({ path: path })
-    //         });
-    //         if (!response.ok) {  // Check if the request was successful
-    //             throw new Error(`HTTP error! status: ${response.status}`);
-    //         }
-    //         data = await response.json();  // Assign the response to the global 'data' variable
-    //         console.log("Python script ran successfully")
-    //         console.log(data.result);
-            
-
-    //     } catch (error) {
-    //         console.log(error);  // Log any errors
-    //     }
-    // });
-};
-
-
-
-// async function runOptimizationScript() {
-//     const path = "main.py";
-//     const response = await fetch('/run-script', {
-//         method: 'POST',
-//         headers: {
-//             'Content-Type': 'application/json'
-//         },
-//         body: JSON.stringify({ path: path })
-//     });
-//     const data = await response.json();
-//     console.log(data.result);
-// }
+    }
+    return power_arr[index];
+}
+console.log(get_target_power(96, distance, power))

@@ -27,7 +27,7 @@ def solve_opt(distance, elevation, params, optimization_opts):
     A = params.get("A")
     eta = params.get("eta")
 
-    #Physiological model params
+    # Physiological model params
     w_prime = params.get("w_prime")
     cp = params.get("cp")
 
@@ -129,7 +129,7 @@ def solve_opt_warmstart(distance, elevation, params, optimization_opts, initiali
     A = params.get("A")
     eta = params.get("eta")
 
-    #Physiological model params
+    # Physiological model params
     w_prime = params.get("w_prime")
     cp = params.get("cp")
 
@@ -204,4 +204,107 @@ def solve_opt_warmstart(distance, elevation, params, optimization_opts, initiali
     s_opts = {"max_iter": 20000}
     opti.solver('ipopt', p_opts, s_opts) 
     sol = opti.solve()
+    return sol, opti, T, U, X
+
+
+def solve_opt_pos_discretized(pos, elevation, params, optimization_opts):
+    N = optimization_opts.get("N")
+    opti = ca.Opti()
+    X = opti.variable(2, N)
+    speed = X[0,:]
+    w_bal = X[1,:]
+    U = opti.variable(1,N)
+    T = opti.variable()
+
+    # Mechanical model params
+    mass_rider = params.get("mass_rider")
+    mass_bike = params.get("mass_bike")
+    m = mass_bike + mass_rider
+    g = params.get("g")
+    mu = params.get("mu")
+    b0 = params.get("b0")
+    b1 = params.get("b1")
+    Iw = params.get("Iw")
+    r = params.get("r")
+    Cd = params.get("Cd")
+    rho = params.get("rho")
+    A = params.get("A")
+    eta = params.get("eta")
+
+    # Physiological model params
+    w_prime = params.get("w_prime")
+    cp = params.get("cp")
+
+    sigma = 4
+    smoothed_elev = gaussian_filter1d(elevation, sigma)
+
+    slope = utils.calculate_gradient(pos, smoothed_elev)
+    interpolated_slope = ca.interpolant('Slope', 'bspline', [pos], slope)
+
+    if optimization_opts.get("w_bal_model") == "ODE": 
+        f = lambda x,u,pos: ca.vertcat((1/x[0] * 1/(m + Iw/r**2)) * (eta*u - mu*m*g*x[0] - m*g*interpolated_slope(pos)*x[0] - b0*x[0] - b1*x[0]**2 - 0.5*Cd*rho*A*x[0]**3),
+                    utils.smooth_w_balance_ode_derivative(u, cp, x, w_prime)) 
+    elif optimization_opts.get("w_bal_model") == "Simple":
+        f = lambda x,u,pos,dt: ca.vertcat((1/x[0] * 1/(m + Iw/r**2)) * (eta*u - mu*m*g*x[0] - m*g*interpolated_slope(pos)*x[0] - b0*x[0] - b1*x[0]**2 - 0.5*Cd*rho*A*x[0]**3), 
+                    -(u-cp)/dt)
+    else:
+        raise ValueError()
+    
+    dt = lambda pos, speed, k: (pos[k+1]-pos[k]) / (speed[k+1]+speed[k])/2
+    dt_arr = [0]
+    if optimization_opts.get("integration_method") == "Euler":
+        for k in range(N-1):
+            x_next = X[:,k] + dt(pos, speed, k)*f(X[:,k], U[:,k], pos[k], dt(pos, speed, k))
+            opti.subject_to(X[:,k+1] == x_next)
+            dt_arr.append(dt(pos, speed, k))
+    elif optimization_opts.get("integration_method") == "RK4":
+        for k in range(N-1): 
+            k1 = f(X[:,k], U[:,k], pos[k])
+            k2 = f(X[:,k] + dt(pos, speed, k)/2*k1, U[:,k], pos[k], dt(pos, speed, k))
+            k3 = f(X[:,k] + dt(pos, speed, k)/2*k2, U[:,k], pos[k], dt(pos, speed, k))
+            k4 = f(X[:,k] + dt(pos, speed, k)*k3, U[:,k], pos[k], dt(pos, speed, k))
+            x_next = X[:,k] + dt(pos, speed, k)/6*(k1+2*k2+2*k3+k4)
+            opti.subject_to(X[:,k+1] == x_next)
+            dt_arr.append(dt(pos, speed, k))
+    else:
+        raise ValueError()
+    
+    if optimization_opts.get("smooth_power_constraint"):
+        opti.minimize(T + 0.00005 * ca.sumsqr(U[:,1:] - U[:,:-1]))
+    else:
+        opti.minimize(T) 
+
+    # Max power constraint params
+    alpha = params.get("alpha")
+    alpha_c = params.get("alpha_c")
+    c_max = params.get("c_max")
+    c = params.get("c")
+    U_max = 4*(alpha*w_bal + cp)*(c/(alpha_c*w_bal + c_max)*(1-c/(alpha_c*w_bal + c_max)))
+
+    # Set the path constraints
+    opti.subject_to(U <= U_max)
+    opti.subject_to(U >= 0)
+    opti.subject_to(opti.bounded(0, w_bal, w_prime))
+    opti.subject_to(opti.bounded(1, speed, 25))
+
+    # Set boundary conditions
+    opti.subject_to(speed[0]==1) 
+    opti.subject_to(w_bal[0]==w_prime)
+
+    opti.subject_to(sum(dt_arr) == T)
+    opti.subject_to(opti.bounded(0, T, pos[-1]/1000*180)) 
+
+    # Provide an initial guess
+    opti.set_initial(T, optimization_opts.get("time_initial_guess"))
+    opti.set_initial(speed, 10)
+    opti.set_initial(U, optimization_opts.get("power_initial_guess"))
+    
+    p_opts = {"expand": False}
+    s_opts = {"max_iter": 20000}
+    opti.solver('ipopt', p_opts, s_opts)
+    try:
+        sol = opti.solve()
+    except RuntimeError:
+        print("Solver failed")
+        return -1, opti, T, U, X 
     return sol, opti, T, U, X
