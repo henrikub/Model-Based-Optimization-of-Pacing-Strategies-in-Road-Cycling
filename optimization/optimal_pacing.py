@@ -54,6 +54,11 @@ def solve_opt(distance, elevation, params, optimization_opts):
         for k in range(N):
             x_next = X[:,k] + dt*f(X[:,k], U[:,k])
             opti.subject_to(X[:,k+1] == x_next)
+    elif optimization_opts.get("integration_method") == "Midpoint":
+        for k in range(N):
+            k1 = f(X[:,k], U[:,k])
+            x_next = X[:,k] + dt*f(X[:,k] + dt/2*k1, U[:,k])
+            opti.subject_to(X[:,k+1] == x_next)
     elif optimization_opts.get("integration_method") == "RK4":
         for k in range(N): 
             k1 = f(X[:,k], U[:,k])
@@ -99,7 +104,7 @@ def solve_opt(distance, elevation, params, optimization_opts):
     
     p_opts = {"expand": False}
     s_opts = {"max_iter": 20000}
-    opti.solver('ipopt', p_opts, s_opts)
+    opti.solver(optimization_opts.get('solver'), p_opts, s_opts)
     sol = opti.solve()
     return sol, opti, T, U, X
 
@@ -155,6 +160,11 @@ def solve_opt_warmstart(distance, elevation, params, optimization_opts, initiali
         for k in range(N):
             x_next = X[:,k] + dt*f(X[:,k], U[:,k])
             opti.subject_to(X[:,k+1] == x_next)
+    elif optimization_opts.get("integration_method") == "Midpoint":
+        for k in range(N):
+            k1 = f(X[:,k], U[:,k])
+            x_next = X[:,k] + dt*f(X[:,k] + dt/2*k1, U[:,k])
+            opti.subject_to(X[:,k+1] == x_next)
     elif optimization_opts.get("integration_method") == "RK4":
         for k in range(N): 
             k1 = f(X[:,k], U[:,k])
@@ -202,7 +212,7 @@ def solve_opt_warmstart(distance, elevation, params, optimization_opts, initiali
     
     p_opts = {"expand": False}
     s_opts = {"max_iter": 20000}
-    opti.solver('ipopt', p_opts, s_opts) 
+    opti.solver(optimization_opts.get('solver'), p_opts, s_opts) 
     sol = opti.solve()
     return sol, opti, T, U, X
 
@@ -301,7 +311,7 @@ def solve_opt_pos_discretized(pos, elevation, params, optimization_opts):
     
     p_opts = {"expand": False}
     s_opts = {"max_iter": 20000}
-    opti.solver('ipopt', p_opts, s_opts)
+    opti.solver(optimization_opts.get('solver'), p_opts, s_opts)
     try:
         sol = opti.solve()
     except RuntimeError:
