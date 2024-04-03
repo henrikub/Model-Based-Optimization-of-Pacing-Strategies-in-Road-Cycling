@@ -217,7 +217,7 @@ def solve_opt_warmstart(distance, elevation, params, optimization_opts, initiali
     return sol, opti, T, U, X
 
 
-def solve_opt_pos_discretized(pos, elevation, params, optimization_opts):
+def solve_opt_pos_discretized(distance, elevation, params, optimization_opts):
     N = optimization_opts.get("N")
     opti = ca.Opti()
     X = opti.variable(2, N)
@@ -248,8 +248,8 @@ def solve_opt_pos_discretized(pos, elevation, params, optimization_opts):
     sigma = 4
     smoothed_elev = gaussian_filter1d(elevation, sigma)
 
-    slope = utils.calculate_gradient(pos, smoothed_elev)
-    interpolated_slope = ca.interpolant('Slope', 'bspline', [pos], slope)
+    slope = utils.calculate_gradient(distance, smoothed_elev)
+    interpolated_slope = ca.interpolant('Slope', 'bspline', [distance], slope)
 
     if optimization_opts.get("w_bal_model") == "ODE": 
         f = lambda x,u,pos: ca.vertcat((1/x[0] * 1/(m + Iw/r**2)) * (eta*u - mu*m*g*x[0] - m*g*interpolated_slope(pos)*x[0] - b0*x[0] - b1*x[0]**2 - 0.5*Cd*rho*A*x[0]**3),
@@ -262,6 +262,8 @@ def solve_opt_pos_discretized(pos, elevation, params, optimization_opts):
     
     dt = lambda pos, speed, k: (pos[k+1]-pos[k]) / (speed[k+1]+speed[k])/2
     dt_arr = [0]
+    pos = ca.linspace(0,distance[-1], N)
+    
     if optimization_opts.get("integration_method") == "Euler":
         for k in range(N-1):
             x_next = X[:,k] + dt(pos, speed, k)*f(X[:,k], U[:,k], pos[k], dt(pos, speed, k))

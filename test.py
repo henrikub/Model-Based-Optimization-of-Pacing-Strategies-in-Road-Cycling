@@ -35,7 +35,7 @@ params = {
 }
 
 time_initial_guess = round(distance[-1]/1000*120)
-N = 200
+N = 391
 
 optimization_opts = {
     "N": N,

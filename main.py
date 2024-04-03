@@ -5,8 +5,8 @@ import plotting.optimization_plots as optimization_plots
 import matplotlib.pyplot as plt
 import casadi as ca
 
-activity = act.ActivityReader("Mech_isle_loop_time_trial.tcx")
-activity.remove_period_after(4170)
+# activity = act.ActivityReader("Mech_isle_loop_time_trial.tcx")
+# activity.remove_period_after(4170)
                                 
 # activity = act.ActivityReader("Greater_london_flat_race.tcx")
 # activity.remove_period_after(17500)
@@ -23,8 +23,8 @@ activity.remove_period_after(4170)
 # activity = act.ActivityReader("Bologna_tt.tcx")
 # activity.remove_period_after(8000)
 
-# activity = act.ActivityReader("Downtown_titans.tcx")
-# activity.remove_period_after(24600)
+activity = act.ActivityReader("Downtown_titans.tcx")
+activity.remove_period_after(24600)
 
 distance_simplified, elevation_simplified = utils.simplify_track(activity.distance, activity.elevation)
 
@@ -51,7 +51,7 @@ params = {
 }
 
 time_initial_guess = round(activity.distance[-1]/1000*120)
-N = round(activity.distance[-1]/10)
+N = round(activity.distance[-1]/5)
 
 optimization_opts = {
     "N": N,
@@ -59,7 +59,7 @@ optimization_opts = {
     "power_initial_guess": params.get('cp'),
     "smooth_power_constraint": True,
     "w_bal_model": "ODE",
-    "integration_method": "Midpoint",
+    "integration_method": "RK4",
     "solver": "ipopt"
 }
 
