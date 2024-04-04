@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import datetime
 
-def plot_optimization_results(sol, U, X, T, distance, elevation, params, opt_details):
+def plot_optimization_results(sol, U, X, T, distance, elevation, params, opt_details, streamlit=False):
     cp = params.get("cp")
     alpha = params.get("alpha")
     alpha_c = params.get("alpha_c")
@@ -56,7 +56,10 @@ def plot_optimization_results(sol, U, X, T, distance, elevation, params, opt_det
 
     fig.text(0.5, 0.02, f"Integration method: {opt_details.get('integration_method')}, points = {len(distance)}, N = {opt_details.get('N')}, W'balance model: {opt_details.get('w_bal_model')}, iterations: {opt_details.get('iterations')}, time: {str(datetime.timedelta(seconds=round(opt_details.get('opt_time'))))}", horizontalalignment="center")
 
-    plt.show()
+    if streamlit:
+        return fig
+    else:
+        plt.show()
 
 def plot_optimization_results2(sol, U, X, T, distance, elevation, params, opt_details):
     cp = params.get("cp")

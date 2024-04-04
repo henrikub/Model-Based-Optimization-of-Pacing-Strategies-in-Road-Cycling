@@ -260,8 +260,8 @@ def solve_opt_pos_discretized(distance, elevation, params, optimization_opts):
     else:
         raise ValueError()
     
-    dt = lambda pos, speed, k: (pos[k+1]-pos[k]) / (speed[k+1]+speed[k])/2
-    dt_arr = [0]
+    dt = lambda pos, speed, k: pos[k+1]/speed[k+1] - pos[k]/speed[k]
+    dt_arr = []
     pos = ca.linspace(0,distance[-1], N)
     
     if optimization_opts.get("integration_method") == "Euler":

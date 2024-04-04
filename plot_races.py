@@ -11,7 +11,6 @@ activity.remove_period_after(9600)
 smooth_power = gaussian_filter1d(activity.power, 4)
 
 optimization = utils.read_json('opt_results_json/hilly_route.json')
-print(optimization['distance'])
 
 plt.plot(activity.distance, smooth_power)
 plt.plot(optimization['distance'], optimization['power'])
