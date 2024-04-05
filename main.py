@@ -54,12 +54,12 @@ params = {
 }
 
 time_initial_guess = round(activity.distance[-1]/1000*120)
-N = round(activity.distance[-1]/10)
+N = round(activity.distance[-1]/5)
 
 optimization_opts = {
     "N": N,
     "time_initial_guess": time_initial_guess,
-    "power_initial_guess": params.get('cp'),
+    "power_initial_guess": params.get('cp') + 10,
     "smooth_power_constraint": True,
     "w_bal_model": "ODE",
     "integration_method": "Euler",
