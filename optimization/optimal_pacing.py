@@ -201,7 +201,7 @@ def solve_opt_warmstart(distance, elevation, params, optimization_opts, initiali
     opti.subject_to(pos[-1]==distance[-1])
     opti.subject_to(w_bal[0]==w_prime)
 
-    opti.subject_to(T>=0) 
+    opti.subject_to(opti.bounded(0, T, distance[-1]/1000*180)) 
 
     # Provide an initial guess
     opti.set_initial(T, initialization.get('time_init'))
@@ -209,9 +209,11 @@ def solve_opt_warmstart(distance, elevation, params, optimization_opts, initiali
     opti.set_initial(speed, initialization.get('speed_init'))
     opti.set_initial(w_bal, initialization.get('w_bal_init'))
     opti.set_initial(U, initialization.get('power_init'))
-    
+    opti.set_initial(opti.lam_g, initialization.get('lam_g_init'))
+
     p_opts = {"expand": False}
-    s_opts = {"max_iter": 20000}
+    s_opts = {"max_iter": 20000, 
+              'warm_start_init_point': 'yes'}
     opti.solver(optimization_opts.get('solver'), p_opts, s_opts) 
     sol = opti.solve()
     return sol, opti, T, U, X

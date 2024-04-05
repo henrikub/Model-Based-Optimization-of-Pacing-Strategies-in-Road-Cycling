@@ -5,8 +5,8 @@ import plotting.optimization_plots as optimization_plots
 import matplotlib.pyplot as plt
 import casadi as ca
 
-activity = act.ActivityReader("Mech_isle_loop_time_trial.tcx")
-activity.remove_period_after(4170)
+# activity = act.ActivityReader("Mech_isle_loop_time_trial.tcx")
+# activity.remove_period_after(4170)
                                 
 # activity = act.ActivityReader("Greater_london_flat_race.tcx")
 # activity.remove_period_after(17500)
@@ -25,6 +25,9 @@ activity.remove_period_after(4170)
 
 # activity = act.ActivityReader("Downtown_titans.tcx")
 # activity.remove_period_after(24600)
+
+activity = act.ActivityReader("Richmond_rollercoaster.tcx")
+activity.remove_period_after(17100)
 
 distance_simplified, elevation_simplified = utils.simplify_track(activity.distance, activity.elevation, 4)
 
@@ -51,7 +54,7 @@ params = {
 }
 
 time_initial_guess = round(activity.distance[-1]/1000*120)
-N = round(activity.distance[-1]/5)
+N = round(activity.distance[-1]/10)
 
 optimization_opts = {
     "N": N,
@@ -80,7 +83,8 @@ initialization = {
     'speed_init': init_sol.value(X[1,:]),
     'w_bal_init': init_sol.value(X[2,:]),
     'power_init': init_sol.value(U),
-    'time_init': init_sol.value(T)
+    'time_init': init_sol.value(T),
+    'lam_g_init': init_sol.value(opti.lam_g)
 }
 
 sol, opti, T, U, X = opt.solve_opt_warmstart(activity.distance, activity.elevation, params, optimization_opts, initialization)
