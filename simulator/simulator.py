@@ -118,7 +118,7 @@ def create_initialization(time, x0, distance, elevation, params):
             power.append(U(X[0,k]))  
         
         power = np.array(power).flatten()
-        print(power.shape)
+
         if (X[2] < 1000).any():
             slope_const -= 50
         else:

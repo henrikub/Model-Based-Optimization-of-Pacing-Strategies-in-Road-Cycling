@@ -76,10 +76,9 @@ X, power, t_grid = create_initialization(timegrid, [activity.distance[0], activi
 optimization_opts = {
     "N": len(t_grid)-1,
     "time_initial_guess": timegrid[-1],
-    "power_initial_guess": params.get('cp') + 10,
     "smooth_power_constraint": True,
     "w_bal_model": "ODE",
-    "integration_method": "Midpoint",
+    "integration_method": "Euler",
     "solver": "ipopt"
 }
 
