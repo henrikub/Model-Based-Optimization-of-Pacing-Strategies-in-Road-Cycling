@@ -29,6 +29,9 @@ import casadi as ca
 activity = act.ActivityReader("Richmond_rollercoaster.tcx")
 activity.remove_period_after(17100)
 
+activity = act.ActivityReader("Cobbled_climbs.tcx")
+activity.remove_period_after(18400)
+
 distance_simplified, elevation_simplified = utils.simplify_track(activity.distance, activity.elevation, 4)
 
 # Params

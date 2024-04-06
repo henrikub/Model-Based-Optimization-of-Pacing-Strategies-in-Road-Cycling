@@ -26,8 +26,11 @@ from plotting.optimization_plots import *
 # activity = ActivityReader("Greater_london_flat_race.tcx")
 # activity.remove_period_after(17500)
 
-activity = ActivityReader("Canopies_and_coastlines_time_trial.tcx")
-activity.remove_period_after(27800)
+# activity = ActivityReader("Canopies_and_coastlines_time_trial.tcx")
+# activity.remove_period_after(27800)
+
+activity = ActivityReader("Cobbled_climbs.tcx")
+activity.remove_period_after(18400)
 
 params = {
     'mass_rider': 78,
@@ -57,20 +60,20 @@ X, power, t_grid = create_initialization(timegrid, [activity.distance[0], activi
 
 
 
-# plt.plot(X[0], X[1])
-# plt.plot(activity.distance, activity.speed)
-# plt.legend(["integrated velocity", "activity velocity"])
-# plt.show()
+plt.plot(X[0], X[1])
+plt.plot(activity.distance, activity.speed)
+plt.legend(["integrated velocity", "activity velocity"])
+plt.show()
 
-# plt.plot(X[0], X[2])
-# plt.show()
+plt.plot(X[0], X[2])
+plt.show()
 
-# fig, ax = plt.subplots()
-# ax.plot(X[0], power)
-# ax.legend(["simulated power"])
-# ax2 = ax.twinx()
-# ax2.plot(activity.distance, activity.elevation, color='tab:red')
-# plt.show()
+fig, ax = plt.subplots()
+ax.plot(X[0], power)
+ax.legend(["simulated power"])
+ax2 = ax.twinx()
+ax2.plot(activity.distance, activity.elevation, color='tab:red')
+plt.show()
 
 
 optimization_opts = {
