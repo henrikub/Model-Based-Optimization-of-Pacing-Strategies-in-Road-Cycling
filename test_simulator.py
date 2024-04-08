@@ -20,8 +20,8 @@ from plotting.optimization_plots import *
 # activity = ActivityReader("Bologna_tt.tcx")
 # activity.remove_period_after(8000)
 
-# activity = ActivityReader("Hilly_route.tcx")
-# activity.remove_period_after(9600)
+activity = ActivityReader("Hilly_route.tcx")
+activity.remove_period_after(9600)
 
 # activity = ActivityReader("Greater_london_flat_race.tcx")
 # activity.remove_period_after(17500)
@@ -29,8 +29,8 @@ from plotting.optimization_plots import *
 # activity = ActivityReader("Canopies_and_coastlines_time_trial.tcx")
 # activity.remove_period_after(27800)
 
-activity = ActivityReader("Cobbled_climbs.tcx")
-activity.remove_period_after(18400)
+# activity = ActivityReader("Cobbled_climbs.tcx")
+# activity.remove_period_after(18400)
 
 params = {
     'mass_rider': 78,
@@ -105,3 +105,55 @@ opt_details = {
 }
 
 plot_optimization_results(sol, U, X, T, activity.distance, activity.elevation, params, opt_details)
+
+
+# Reoptimizing!
+X0 = [5000, 15, 20000]
+index = int(np.argwhere(np.array(activity.distance) > X0[0])[0])
+dist = activity.distance[index:]
+dist = [elem - activity.distance[index] for elem in dist]
+elev = activity.elevation[index:]
+N = round(dist[-1]/5)
+timegrid = np.linspace(0,round(dist[-1]/1000*150), N)
+
+sim_X, power, t_grid = create_initialization(timegrid, [dist[0], X0[1], X0[2]], dist, elev, params)
+
+
+optimization_opts = {
+    "N": len(t_grid)-1,
+    "time_initial_guess": t_grid[-1],
+    "smooth_power_constraint": True,
+    "w_bal_model": "ODE",
+    "integration_method": "Euler",
+    "solver": "ipopt"
+}
+
+initialization = {
+    'pos_init': sim_X[0],
+    'speed_init': sim_X[1],
+    'w_bal_init': sim_X[2],
+    'power_init': power,
+    'time_init': t_grid[-1],
+}
+X0[0]=0
+reopt_sol, reopt_opti, reopt_T, reopt_U, reopt_X = reoptimize(dist, elev, X0, params, optimization_opts, initialization)
+stats = sol.stats()
+opt_details = {
+    "N": N,
+    "w_bal_model": optimization_opts.get("w_bal_model"),
+    "integration_method": optimization_opts.get("integration_method"),
+    "time_init_guess": optimization_opts.get("time_initial_guess"),
+    "iterations": stats['iter_count'],
+    "opt_time": stats['t_wall_total']
+}
+pos = np.array(reopt_sol.value(reopt_X[0,:])) + activity.distance[index]
+dist = [elem + activity.distance[index] for elem in dist]
+print(pos)
+reopt_X[0,:] = pos
+
+plot_optimization_results(reopt_sol, reopt_U, reopt_X, reopt_T, dist, elev, params, opt_details)
+
+plt.plot(sol.value(X[0,:]), sol.value(U))
+plt.plot(np.array(pos), np.array(reopt_sol.value(reopt_U)))
+plt.legend(["Initial opt", "Reopt"])
+plt.show()

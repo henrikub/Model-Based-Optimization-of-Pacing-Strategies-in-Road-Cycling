@@ -1,41 +1,25 @@
 import streamlit as st
-import subprocess
 import optimization.optimal_pacing as opt
-import activity_reader_tcx.activity_reader as act
 import utils.utils as utils
-import matplotlib.pyplot as plt
 from plotting.optimization_plots import *
 import casadi as ca
 from simulator.simulator import *
+import json
 
 st.title("Optimization settings")
 
 cp = st.number_input('CP', value=265)
 w_prime = st.number_input("W'", value=26630, min_value=1)
-route_name = st.selectbox('Select route', ['Mech Isle Loop', 'Hilly Route', 'Downtown Titans', 'Richmond Rollercoaster', 'Greater London Flat', 'Cobbled Climbs'])
+route_name = st.selectbox('Select route', ['Mech Isle Loop', 'Hilly Route', 'Downtown Titans', 'Richmond Rollercoaster', 'Greater London Flat', 'Cobbled Climbs', 'Canopies and Coastlines'])
 integration_method = st.selectbox('Select integration method', ['Euler', 'RK4', 'Midpoint'])
 
-route_filename = {
-    'Mech Isle Loop': 'Mech_isle_loop_time_trial.tcx',
-    'Hilly Route': 'Hilly_route.tcx',
-    'Downtown Titans': 'Downtown_titans.tcx',
-    'Richmond Rollercoaster': 'Richmond_rollercoaster.tcx',
-    'Greater London Flat': 'Greater_london_flat_race.tcx',
-    'Cobbled Climbs': 'Cobbled_climbs.tcx'
-    
-}
-end_of_route = {
-    'Mech Isle Loop': 4170,
-    'Hilly Route': 9600,
-    'Downtown Titans': 24600,
-    'Richmond Rollercoaster': 17100,
-    'Greater London Flat': 17500,
-    'Cobbled Climbs': 18400
-}
+routes_dict = {}
+with open('routes.json', 'r') as file:
+    routes_dict = json.load(file)
 
+distance = routes_dict[route_name]['distance']
+elevation = routes_dict[route_name]['elevation']
 
-activity = act.ActivityReader(route_filename[route_name])
-activity.remove_period_after(end_of_route[route_name])
 
 # Params
 params = {
@@ -59,15 +43,12 @@ params = {
     'c': 80
 }
 
-
-
-
 if st.button("Run optimization"):
     message = st.text("This could take several minutes..")
-    N = round(activity.distance[-1]/5)
-    timegrid = np.linspace(0,round(activity.distance[-1]/1000*150), N)
+    N = round(distance[-1]/5)
+    timegrid = np.linspace(0,round(distance[-1]/1000*150), N)
 
-    X, power, t_grid = create_initialization(timegrid, [activity.distance[0], activity.speed[0], params.get('w_prime')], activity.distance, activity.elevation, params)
+    X, power, t_grid = create_initialization(timegrid, [distance[0], 1, params.get('w_prime')], distance, elevation, params)
     
     optimization_opts = {
         "N": len(t_grid)-1,
@@ -85,7 +66,7 @@ if st.button("Run optimization"):
         'power_init': power,
         'time_init': timegrid[-1],
     }
-    sol, opti, T, U, X = opt.solve_opt_warmstart_sim(activity.distance, activity.elevation, params, optimization_opts, initialization)
+    sol, opti, T, U, X = opt.solve_opt_warmstart_sim(distance, elevation, params, optimization_opts, initialization)
     stats = sol.stats()
     opt_details = {
         "N": N,
@@ -98,13 +79,8 @@ if st.button("Run optimization"):
 
     message.empty()
 
-    fig2 = plot_optimization_results(sol, U, X, T, activity.distance, activity.elevation, params, opt_details, True)
+    fig2 = plot_optimization_results(sol, U, X, T, distance, elevation, params, opt_details, True)
     st.header("Optimization Results")
     st.pyplot(fig2)
-
-if st.button("Save result"):
     t_grid = ca.linspace(0, sol.value(T), N+1)
-    try: 
-        utils.write_json(sol.value(U), t_grid.full().flatten(), sol.value(X[0,:]))
-    except:
-        print("error")
+    utils.write_json(sol.value(U), t_grid.full().flatten(), sol.value(X[0,:]))
