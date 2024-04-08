@@ -12,7 +12,7 @@ st.title("Optimization settings")
 
 cp = st.number_input('CP', value=265)
 w_prime = st.number_input("W'", value=26630, min_value=1)
-route_name = st.selectbox('Select route', ['Mech Isle Loop', 'Hilly Route', 'Downtown Titans', 'Richmond Rollercoaster', 'Greater London Flat'])
+route_name = st.selectbox('Select route', ['Mech Isle Loop', 'Hilly Route', 'Downtown Titans', 'Richmond Rollercoaster', 'Greater London Flat', 'Cobbled Climbs'])
 integration_method = st.selectbox('Select integration method', ['Euler', 'RK4', 'Midpoint'])
 
 route_filename = {
@@ -20,7 +20,8 @@ route_filename = {
     'Hilly Route': 'Hilly_route.tcx',
     'Downtown Titans': 'Downtown_titans.tcx',
     'Richmond Rollercoaster': 'Richmond_rollercoaster.tcx',
-    'Greater London Flat': 'Greater_london_flat_race.tcx'
+    'Greater London Flat': 'Greater_london_flat_race.tcx',
+    'Cobbled Climbs': 'Cobbled_climbs.tcx'
     
 }
 end_of_route = {
@@ -28,7 +29,8 @@ end_of_route = {
     'Hilly Route': 9600,
     'Downtown Titans': 24600,
     'Richmond Rollercoaster': 17100,
-    'Greater London Flat': 17500
+    'Greater London Flat': 17500,
+    'Cobbled Climbs': 18400
 }
 
 
@@ -56,7 +58,6 @@ params = {
     'c_max': 150,
     'c': 80
 }
-
 
 
 
@@ -101,8 +102,9 @@ if st.button("Run optimization"):
     st.header("Optimization Results")
     st.pyplot(fig2)
 
-    if st.button("Save result"):
-        t_grid = ca.linspace(0, sol.value(T), N+1)
-        try: utils.write_json(sol.value(U), t_grid.full().flatten(), sol.value(X[0,:]))
-        except:
-            print("error")
+if st.button("Save result"):
+    t_grid = ca.linspace(0, sol.value(T), N+1)
+    try: 
+        utils.write_json(sol.value(U), t_grid.full().flatten(), sol.value(X[0,:]))
+    except:
+        print("error")
