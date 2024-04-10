@@ -33,7 +33,9 @@ def w_prime_balance_ode(power, time, cp, w_prime):
 
         w_prime_balance.append(new)
         last = new
-
+    print("Len of time", len(time))
+    print("len of power", len(power))
+    print("Len of W'bal", len(w_prime_balance))
     return w_prime_balance
 
 def remove_every_other_value(arr):
@@ -62,11 +64,12 @@ def smooth_w_balance_ode_derivative(u, cp, x, w_prime, smooth_factor=0.1):
     
     return transition * (-(u - cp)) + (1 - transition) * ((1 - x[2]/w_prime)*(cp - u))
 
-def write_json(power, time, distance):
+def write_json(power, time, distance, w_bal):
     power_dict = {
         'power': power.tolist(),
         'time': time.tolist(),
-        'distance': distance.tolist()
+        'distance': distance.tolist(),
+        'w_bal': w_bal.tolist()
     }
     with open('optimal_power.json','w') as file:
         json.dump(power_dict, file)
@@ -76,3 +79,10 @@ def read_json(filename):
     with open(filename, 'r') as file:
         obj = json.load(file)
     return obj
+
+def find_optimal_wbal(distance):
+    opt_results = {}
+    with open('optimal_power.json', 'r') as file:
+        opt_results = json.load(file)
+    index = int(np.argwhere(opt_results['distance'] >= distance)[0])
+    return opt_results['w_bal'][index]

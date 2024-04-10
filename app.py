@@ -47,11 +47,12 @@ if st.button("Run optimization"):
     message = st.text("This could take several minutes..")
     N = round(distance[-1]/5)
     timegrid = np.linspace(0,round(distance[-1]/1000*150), N)
-
     X, power, t_grid = create_initialization(timegrid, [distance[0], 1, params.get('w_prime')], distance, elevation, params)
+    N = len(power)-1
+    print("after initialization: len of power is", len(power), "len of time is", len(t_grid), "N is ", N)
     
     optimization_opts = {
-        "N": len(t_grid)-1,
+        "N": N,
         "time_initial_guess": t_grid[-1],
         "smooth_power_constraint": True,
         "w_bal_model": "ODE",
@@ -64,7 +65,7 @@ if st.button("Run optimization"):
         'speed_init': X[1],
         'w_bal_init': X[2],
         'power_init': power,
-        'time_init': timegrid[-1],
+        'time_init': t_grid[-1],
     }
     sol, opti, T, U, X = opt.solve_opt_warmstart_sim(distance, elevation, params, optimization_opts, initialization)
     stats = sol.stats()
@@ -76,11 +77,12 @@ if st.button("Run optimization"):
         "iterations": stats['iter_count'],
         "opt_time": stats['t_wall_total']
     }
-
+    
     message.empty()
 
     fig2 = plot_optimization_results(sol, U, X, T, distance, elevation, params, opt_details, True)
     st.header("Optimization Results")
     st.pyplot(fig2)
     t_grid = ca.linspace(0, sol.value(T), N+1)
-    utils.write_json(sol.value(U), t_grid.full().flatten(), sol.value(X[0,:]))
+    print("writing to file: len of power is", len(sol.value(U)), "len of time is", len(t_grid.full().flatten()), "N is ", N)
+    utils.write_json(sol.value(U), t_grid.full().flatten(), sol.value(X[0,:]), sol.value(X[2,:]))

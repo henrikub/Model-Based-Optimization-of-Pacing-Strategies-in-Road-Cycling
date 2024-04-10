@@ -106,10 +106,20 @@ opt_details = {
 
 plot_optimization_results(sol, U, X, T, activity.distance, activity.elevation, params, opt_details)
 
+# t_grid = ca.linspace(0, sol.value(T), N+1)
+
+# utils.write_json(sol.value(U), t_grid.full().flatten(), sol.value(X[0,:]), sol.value(X[2,:]))
+
+# w_bal = sol.value(X[2,:])
+# dist = 7000
+# index = np.argwhere(sol.value(X[0,:]) >= dist)[0][0]
+# print(index)
+# print(w_bal[index])
+
 
 # Reoptimizing!
 X0 = [5000, 15, 20000]
-index = int(np.argwhere(np.array(activity.distance) > X0[0])[0])
+index = np.argwhere(np.array(activity.distance) > X0[0])[0][0]
 dist = activity.distance[index:]
 dist = [elem - activity.distance[index] for elem in dist]
 elev = activity.elevation[index:]
