@@ -35,7 +35,7 @@ activity.remove_period_after(9600)
 print(activity.elevation[0], activity.elevation[-40])
 # activity.elevation = activity.elevation[:-40]
 # activity.distance = activity.distance[:-40]
-num_laps = 4
+num_laps = 6
 elevation = []
 distance = []
 if num_laps != 1:
@@ -46,7 +46,11 @@ if num_laps != 1:
         new_distance.extend([elem + i*max(activity.distance) for elem in activity.distance])
     elevation = new_elevation
     distance = new_distance
-
+    for i in range(len(distance)-10):
+        if distance[i+1] - distance[i] < 1:
+            print("removed elem")
+            distance.pop(i+1)
+            elevation.pop(i+1)
 
 plt.plot(distance, elevation)
 plt.show()

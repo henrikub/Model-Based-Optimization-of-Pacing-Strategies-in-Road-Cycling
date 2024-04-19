@@ -25,6 +25,9 @@ cobbled_climbs.remove_period_after(18400)
 two_bridges_loop = ActivityReader("Two_bridges_loop.tcx")
 two_bridges_loop.remove_period_after(7100)
 
+park_perimeter_loop = ActivityReader("Park_perimeter_loop.tcx")
+park_perimeter_loop.remove_period_after(9800)
+
 routes_dict = {
     'Richmond Rollercoaster': {
         'distance': richmond_rollercoaster.distance,
@@ -57,7 +60,11 @@ routes_dict = {
     'Two Bridges Loop': {
         'distance': two_bridges_loop.distance,
         'elevation': two_bridges_loop.elevation    
-    }                
+    },
+    'Park Perimeter Loop': {
+        'distance': park_perimeter_loop.distance,
+        'elevation': park_perimeter_loop.elevation    
+    }                     
 }
 import json
 with open('routes.json', 'w') as file:
