@@ -31,39 +31,48 @@ park_perimeter_loop.remove_period_after(9800)
 routes_dict = {
     'Richmond Rollercoaster': {
         'distance': richmond_rollercoaster.distance,
-        'elevation': richmond_rollercoaster.elevation
+        'elevation': richmond_rollercoaster.elevation,
+        'lead_in': 0
     },
     'Downtown Titans': {
         'distance': downtown_titans.distance,
-        'elevation': downtown_titans.elevation
+        'elevation': downtown_titans.elevation,
+        'lead_in': 800
     },
     'Mech Isle Loop': {
         'distance': mech_isle_loop.distance,
-        'elevation': mech_isle_loop.elevation    
+        'elevation': mech_isle_loop.elevation,
+        'lead_in': 0    
     },
     'Hilly Route': {
         'distance': hilly_route.distance,
-        'elevation': hilly_route.elevation    
+        'elevation': hilly_route.elevation,
+        'lead_in': 500    
     },
     'Greater London Flat': {
         'distance': greater_london_flat.distance,
-        'elevation': greater_london_flat.elevation    
+        'elevation': greater_london_flat.elevation,
+        'lead_in': 0    
     },
     'Canopies and Coastlines': {
         'distance': canopies_and_coastlines.distance,
-        'elevation': canopies_and_coastlines.elevation    
+        'elevation': canopies_and_coastlines.elevation,
+        'lead_in': 0    
     },
     'Cobbled Climbs': {
         'distance': cobbled_climbs.distance,
-        'elevation': cobbled_climbs.elevation    
+        'elevation': cobbled_climbs.elevation,
+        'lead_in': 300    
     },
     'Two Bridges Loop': {
         'distance': two_bridges_loop.distance,
-        'elevation': two_bridges_loop.elevation    
+        'elevation': two_bridges_loop.elevation,
+        'lead_in': 0    
     },
     'Park Perimeter Loop': {
         'distance': park_perimeter_loop.distance,
-        'elevation': park_perimeter_loop.elevation    
+        'elevation': park_perimeter_loop.elevation,
+        'lead_in': 400    
     }                     
 }
 import json
