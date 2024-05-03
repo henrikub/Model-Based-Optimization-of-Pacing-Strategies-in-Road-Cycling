@@ -75,7 +75,7 @@ def create_initialization(time, x0, distance, elevation, params):
     A = params.get("A")
     eta = params.get("eta")
 
-    #Physiological model params
+    # Physiological model params
     w_prime = params.get("w_prime")
     cp = params.get("cp")
 
@@ -85,10 +85,10 @@ def create_initialization(time, x0, distance, elevation, params):
     slope = utils.calculate_gradient(distance, smoothed_elev)
 
     interpolated_slope = ca.interpolant('Slope', 'bspline', [distance], slope)
-        
+    interpolated_friction = ca.interpolant('Friction', 'bspline', [distance], mu)
     def system_dynamics(x, u):
         return ca.vertcat(x[1], 
-                (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - mu*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3),
+                (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - interpolated_friction(x[0])*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3),
                 utils.smooth_w_balance_ode_derivative(u, cp, x, w_prime)) 
 
     tf = time[-1]
@@ -97,16 +97,17 @@ def create_initialization(time, x0, distance, elevation, params):
 
 
     dt = tf/N  
+    t0 = 0
     x = ca.MX.sym('x', 3) 
     u = ca.MX.sym('u', 1)  
     f = system_dynamics(x, u)  
     ode = {'x': x, 'p': u, 'ode': f}  
-    opts = {'tf': dt} 
-    F = ca.integrator('F', 'rk', ode, opts)  
+    F = ca.integrator('F', 'rk', ode, t0, dt)   
 
-    done = False
-    slope_const = 2500
-    while not done:
+    lower_bound = 0
+    upper_bound = 2500
+    while upper_bound - lower_bound > 50:  
+        slope_const = (upper_bound + lower_bound) / 2
         X = np.zeros((3, N))
         U = lambda pos: cp + slope_const*interpolated_slope(pos)
         power = []
@@ -120,10 +121,10 @@ def create_initialization(time, x0, distance, elevation, params):
         power = np.array(power).flatten()
 
         if (X[2] < 1000).any():
-            slope_const -= 50
+            upper_bound = slope_const
         else:
-            done = True
+            lower_bound = slope_const
 
         end_index = np.argwhere(np.array(X[0,:]) >= distance[-1])[0][0]
-    print("Slope constant is ", slope_const)
+    #print("Slope constant is ", slope_const)
     return X[:,:end_index], power[:end_index], t_grid[:end_index]

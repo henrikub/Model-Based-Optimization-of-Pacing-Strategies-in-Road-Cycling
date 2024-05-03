@@ -2,7 +2,7 @@ import casadi as ca
 from scipy.ndimage import gaussian_filter1d
 import utils.utils as utils
 
-def solve_opt(distance, elevation, params, optimization_opts):
+def solve_opt(distance, elevation, params, optimization_opts, initialization):
     N = optimization_opts.get("N")
     opti = ca.Opti()
     X = opti.variable(3, N+1)
@@ -35,20 +35,21 @@ def solve_opt(distance, elevation, params, optimization_opts):
     smoothed_elev = gaussian_filter1d(elevation, sigma)
 
     slope = utils.calculate_gradient(distance, smoothed_elev)
-
     interpolated_slope = ca.interpolant('Slope', 'bspline', [distance], slope)
 
-    if optimization_opts.get("w_bal_model") == "ODE": 
+    interpolated_friction = ca.interpolant('Friction', 'bspline', [distance], mu)
+
+    if optimization_opts.get("w_bal_model") == "ODE":  
         f = lambda x,u: ca.vertcat(x[1], 
-                    (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - mu*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3),
-                    utils.smooth_w_balance_ode_derivative(u, cp, x, w_prime)) 
+                    (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - interpolated_friction(x[0])*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3),
+                    utils.smooth_w_balance_ode_derivative(u, cp, x, w_prime))     
     elif optimization_opts.get("w_bal_model") == "Simple":
         f = lambda x,u: ca.vertcat(x[1], 
-                    (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - mu*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3), 
+                    (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - interpolated_friction(x[0])*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3), 
                     -(u-cp))
     else:
         raise ValueError()
-    
+
     dt = T/N
     if optimization_opts.get("integration_method") == "Euler":
         for k in range(N):
@@ -71,17 +72,18 @@ def solve_opt(distance, elevation, params, optimization_opts):
         raise ValueError()
     
     if optimization_opts.get("smooth_power_constraint"):
-        opti.minimize(T + 0.00005 * ca.sumsqr(U[:,1:] - U[:,:-1]))
+        opti.minimize(T + 0.00005 * ca.sumsqr(U[:,1:] - U[:,:-1])) 
     else:
         opti.minimize(T) 
 
+
     # Max power constraint params
     alpha = params.get("alpha")
-    alpha_c = params.get("alpha_c")
-    c_max = params.get("c_max")
-    c = params.get("c")
-    U_max = 4*(alpha*w_bal + cp)*(c/(alpha_c*w_bal + c_max)*(1-c/(alpha_c*w_bal + c_max)))
-
+    # alpha_c = params.get("alpha_c")
+    # c_max = params.get("c_max")
+    # c = params.get("c")
+    #U_max = 4*(alpha*w_bal + cp)*(c/(alpha_c*w_bal + c_max)*(1-c/(alpha_c*w_bal + c_max)))
+    U_max = alpha*w_bal + cp
 
     # Set the path constraints
     opti.subject_to(U <= U_max)
@@ -89,8 +91,14 @@ def solve_opt(distance, elevation, params, optimization_opts):
     opti.subject_to(opti.bounded(0, w_bal, w_prime))
     opti.subject_to(opti.bounded(1, speed, 25))
 
+    if optimization_opts.get('negative_split'):
+        w_bal_start = optimization_opts.get("w_bal_start")
+        w_bal_end = optimization_opts.get("w_bal_end")
+        x = ca.linspace(0,T,N+1)
+        opti.subject_to(w_bal > (w_bal_end-w_bal_start)/T *ca.transpose(x) + w_bal_start)
+
     # Set boundary conditions
-    opti.subject_to(pos[0]==0) 
+    opti.subject_to(pos[0]==distance[0]) 
     opti.subject_to(speed[0]==1) 
     opti.subject_to(pos[-1]==distance[-1])
     opti.subject_to(w_bal[0]==w_prime)
@@ -98,13 +106,15 @@ def solve_opt(distance, elevation, params, optimization_opts):
     opti.subject_to(opti.bounded(0, T, distance[-1]/1000*180)) 
 
     # Provide an initial guess
-    opti.set_initial(T, optimization_opts.get("time_initial_guess"))
-    opti.set_initial(speed, 10)
-    opti.set_initial(U, optimization_opts.get("power_initial_guess"))
-    
+    opti.set_initial(T, initialization.get('time_init'))
+    opti.set_initial(pos, initialization.get('pos_init'))
+    opti.set_initial(speed, initialization.get('speed_init'))
+    opti.set_initial(w_bal, initialization.get('w_bal_init'))
+    opti.set_initial(U, initialization.get('power_init'))
+
     p_opts = {"expand": False}
     s_opts = {"max_iter": 20000}
-    opti.solver(optimization_opts.get('solver'), p_opts, s_opts)
+    opti.solver(optimization_opts.get('solver'), p_opts, s_opts) 
     sol = opti.solve()
     return sol, opti, T, U, X
 

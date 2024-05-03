@@ -28,7 +28,7 @@ def regression(function, power, time):
     """
     if function == linear_p:
         initial_guess = (20000, 300)
-        return curve_fit(linear_p, time, power, p0=initial_guess, bounds=(0,[50000,1000]))
+        return curve_fit(linear_p, time, power, p0=initial_guess, bounds=(0,[50000, 1000]))
 
     if function == linear_tw:
         initial_guess = (20000, 300)
@@ -40,11 +40,11 @@ def regression(function, power, time):
 
     if function == nonlinear_3:
         initial_guess = (20000, 250, 1000)
-        return curve_fit(nonlinear_3, power, time, p0=initial_guess, bounds = ([10000, 200, 300], [30000, 500, 5000]))
+        return curve_fit(nonlinear_3, power, time, p0=initial_guess, bounds = ([10000, 200, 300], [50000, 500, 5000]))
     
     if function == nonlinear_4:
         initial_guess = (20000, 250, 1000, 0.1)
-        return curve_fit(nonlinear_4, power, time, p0=initial_guess, bounds=([0, 200, 500, 0], [30000, 500, 5000, 10]))
+        return curve_fit(nonlinear_4, power, time, p0=initial_guess, bounds=([0, 200, 500, 0], [50000, 500, 5000, 10]))
     
 
 def r_squared(y_points, x_points, fitted_model):

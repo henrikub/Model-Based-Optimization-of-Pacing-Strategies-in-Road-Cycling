@@ -53,16 +53,16 @@ def plot_regression(power_points, time_points, fitted_ltw, params_ltw, fitted_lp
         for i in range(len(val_power_points)):
             plt.plot(val_time_points[i], val_power_points[i]*val_time_points[i], marker="o", markersize=10, markeredgecolor="blue", markerfacecolor="blue")
     #plt.plot(retest_time, retest_power*retest_time, marker="o", markersize=10, markeredgecolor="green", markerfacecolor="green")
-    plt.xlim(0,1200)
-    plt.ylim(0,400000)
+    plt.xlim(0,400000)
+    plt.ylim(0,1200)
     plt.subplots_adjust(hspace=0.7)
     plt.show()
     
-    plt.plot(power, fitted_nl2)
-    plt.plot(power, fitted_nl3)
-    plt.plot(power, fitted_nl4)
-    plt.xlabel("Power [W]")
-    plt.ylabel("Time [s]")
+    plt.plot(fitted_nl2, power)
+    plt.plot(fitted_nl3, power)
+    plt.plot(fitted_nl4, power)
+    plt.ylabel("Power [W]")
+    plt.xlabel("Time [s]")
     for i in range(len(power_points)):
         plt.plot(power_points[i], time_points[i], marker="o", markersize=10, markeredgecolor="red", markerfacecolor="red")
     if val_power_points != None:

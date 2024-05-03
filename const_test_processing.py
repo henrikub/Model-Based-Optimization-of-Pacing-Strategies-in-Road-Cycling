@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from activity_reader_tcx.activity_reader import ActivityReader
-from plotting import plot_regression
+from plotting_reg import *
 from regression import *
 from w_bal.w_bal import *
 
@@ -36,8 +36,8 @@ from w_bal.w_bal import *
 # power_points = np.array([int(test1_activity.avg_power), int(test2_activity.avg_power), int(test3_activity.avg_power), int(test4_activity.avg_power)])
 # time_points = np.array([int(test1_activity.total_time), int(test2_activity.total_time), int(test3_activity.total_time), int(test4_activity.total_time)])
 
-power_points = np.array([290, 306, 342, 363, 432])
-time_points = np.array([1200, 600, 300, 180, 60])
+power_points = np.array([352, 423, 328, 897])
+time_points = np.array([417, 195, 610, 15])
 
 params_lp, covariance_lp = regression(linear_p, power_points, time_points)
 w_prime_lp, cp_lp = params_lp
