@@ -3,8 +3,9 @@ import json
 import optimization.optimal_pacing as opt
 import plotting.optimization_plots as opt_plt
 import simulator.simulator as sim
+import matplotlib.pyplot as plt
 
-route_name = "Cobbled Climbs"
+route_name = "Hilly Route"
 num_laps = 2
 integration_method = "RK4"
 negative_split = False
@@ -46,7 +47,7 @@ if num_laps != 1:
 # Params
 params = {
     'mass_rider': mass,
-    'mass_bike': 8.4,
+    'mass_bike': 8,
     'g': 9.81,
     'mu': friction,
     'b0': 0.091,
@@ -87,8 +88,8 @@ initialization = {
     'power_init': power,
     'time_init': timegrid[-1],
 }
-sol, opti, T, U, X = opt.solve_opt(distance, elevation, params, optimization_opts, initialization)
-stats = sol.stats()
+sol_rk4, opti_rk4, T_rk4, U_rk4, X_rk4 = opt.solve_opt(distance, elevation, params, optimization_opts, initialization)
+stats = sol_rk4.stats()
 opt_details = {
     "N": N,
     "w_bal_model": optimization_opts.get("w_bal_model"),
@@ -97,4 +98,39 @@ opt_details = {
     "iterations": stats['iter_count'],
     "opt_time": stats['t_wall_total']
 }
-opt_plt.plot_optimization_results(sol, U, X, T, distance, elevation, params, opt_details, False)
+# opt_plt.plot_optimization_results(sol_rk4, U_rk4, X_rk4, T_rk4, distance, elevation, params, opt_details, False)
+
+optimization_opts["integration_method"] = "Euler"
+sol_e, opti_e, T_e, U_e, X_e = opt.solve_opt(distance, elevation, params, optimization_opts, initialization)
+stats = sol_e.stats()
+opt_details = {
+    "N": N,
+    "w_bal_model": optimization_opts.get("w_bal_model"),
+    "integration_method": optimization_opts.get("integration_method"),
+    "time_init_guess": optimization_opts.get("time_initial_guess"),
+    "iterations": stats['iter_count'],
+    "opt_time": stats['t_wall_total']
+}
+# opt_plt.plot_optimization_results(sol_e, U_e, X_e, T_e, distance, elevation, params, opt_details, False)
+
+optimization_opts["integration_method"] = "Midpoint"
+sol_m, opti_m, T_m, U_m, X_m = opt.solve_opt(distance, elevation, params, optimization_opts, initialization)
+stats = sol_m.stats()
+opt_details = {
+    "N": N,
+    "w_bal_model": optimization_opts.get("w_bal_model"),
+    "integration_method": optimization_opts.get("integration_method"),
+    "time_init_guess": optimization_opts.get("time_initial_guess"),
+    "iterations": stats['iter_count'],
+    "opt_time": stats['t_wall_total']
+}
+# opt_plt.plot_optimization_results(sol_m, U_m, X_m, T_m, distance, elevation, params, opt_details, False)
+
+
+plt.plot(sol_rk4.value(X_rk4[0,:]), sol_rk4.value(U_rk4))
+plt.plot(sol_e.value(X_e[0,:]), sol_e.value(U_e))
+plt.plot(sol_m.value(X_m[0,:]), sol_m.value(U_m))
+plt.xlabel("Distance [m]")
+plt.ylabel("Power [W]")
+plt.legend(["RK4", "Euler", "Midpoint"])
+plt.show()

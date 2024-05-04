@@ -14,8 +14,8 @@ def nonlinear_2(P, AWC, CP):
     return AWC/(P-CP)
 
 
-def nonlinear_3(P, AWC, CP, P_max):
-    return (AWC/(P-CP))-(AWC/(P_max-CP))
+def nonlinear_3(P, W_prime, CP,):
+    return (W_prime/(P-CP))-(W_prime/(930-CP))
 
 
 def nonlinear_4(P, AWC, CP, P_max, tau):
@@ -39,8 +39,8 @@ def regression(function, power, time):
         return curve_fit(nonlinear_2, power, time, bounds=(0,[50000, 500]))
 
     if function == nonlinear_3:
-        initial_guess = (20000, 250, 1000)
-        return curve_fit(nonlinear_3, power, time, p0=initial_guess, bounds = ([10000, 200, 300], [50000, 500, 5000]))
+        initial_guess = (26000, 280)
+        return curve_fit(nonlinear_3, power, time, p0=initial_guess, bounds = ([10000, 200], [50000, 500]))
     
     if function == nonlinear_4:
         initial_guess = (20000, 250, 1000, 0.1)
