@@ -33,9 +33,6 @@ def w_prime_balance_ode(power, time, cp, w_prime):
 
         w_prime_balance.append(new)
         last = new
-    print("Len of time", len(time))
-    print("len of power", len(power))
-    print("Len of W'bal", len(w_prime_balance))
     return w_prime_balance
 
 def remove_every_other_value(arr):
@@ -58,11 +55,10 @@ def w_prime_balance_simple(power, time, cp, w_prime):
         last = new
     return w_prime_balance
 
-def smooth_w_balance_ode_derivative(u, cp, x, w_prime, smooth_factor=0.1):
-    transition = ca.tanh(smooth_factor * (u - cp))
-    transition = 0.5 * (transition + 1)
+def smooth_w_balance_ode_derivative(u, cp, x, w_prime, smoothness=10):
+    transition = 0.5 + 0.5*ca.tanh((u - cp)/smoothness)
     
-    return transition * (-(u - cp)) + (1 - transition) * ((1 - x[2]/w_prime)*(cp - u))
+    return (1-transition)*(1-x[2]/w_prime)*(cp-u) + transition*(cp-u)
 
 def write_json(power, time, distance, w_bal):
     power_dict = {

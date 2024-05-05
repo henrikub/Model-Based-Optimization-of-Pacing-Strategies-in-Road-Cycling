@@ -4,9 +4,10 @@ import optimization.optimal_pacing as opt
 import plotting.optimization_plots as opt_plt
 import simulator.simulator as sim
 import matplotlib.pyplot as plt
+from utils.utils import w_prime_balance_ode
 
-route_name = "Hilly Route"
-num_laps = 2
+route_name = "Mech Isle Loop"
+num_laps = 1
 integration_method = "RK4"
 negative_split = False
 w_bal_start = 0
@@ -134,3 +135,10 @@ plt.xlabel("Distance [m]")
 plt.ylabel("Power [W]")
 plt.legend(["RK4", "Euler", "Midpoint"])
 plt.show()
+
+# time = np.linspace(0,sol_rk4.value(T_rk4), N+1)
+# w_bal_ode = w_prime_balance_ode(sol_rk4.value(U_rk4), time, cp, w_prime)
+# plt.plot(time, w_bal_ode)
+# plt.plot(time, sol_rk4.value(X_rk4[2,:]))
+# plt.legend(["Actual W'balance", "Integrated W'balance"])
+# plt.show()
