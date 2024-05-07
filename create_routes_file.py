@@ -72,18 +72,18 @@ for d in hilly_route.distance:
     else:
         hilly_route_friction.append(surface_friction['pavement'])
 
-cobbled_climbs = ActivityReader("Cobbled_climbs.tcx")
-cobbled_climbs.remove_period_after(9200 + 400)
+cobbled_climbs = ActivityReader("cobbled_climbs_intuitive_pacing.tcx")
+cobbled_climbs.remove_period_after(9560)
 
 cobbled_climbs_friction = []
 for d in cobbled_climbs.distance:
-    if d <= 5600:
+    if d <= 5700:
         cobbled_climbs_friction.append(surface_friction['pavement'])
-    elif 5600 < d <= 5900:
+    elif 5701 < d <= 6060:
         cobbled_climbs_friction.append(surface_friction['cobbles'])
-    elif 5900 < d <= 6850:
+    elif 6061 < d <= 6988:
         cobbled_climbs_friction.append(surface_friction['pavement'])
-    elif 6850 < d <= 7000:
+    elif 6989 < d <= 7098:
         cobbled_climbs_friction.append(surface_friction['cobbles'])
     else:
         cobbled_climbs_friction.append(surface_friction['pavement'])
@@ -131,7 +131,7 @@ routes_dict = {
         'distance': cobbled_climbs.distance,
         'elevation': cobbled_climbs.elevation,
         'friction': cobbled_climbs_friction,
-        'lead_in': 400    
+        'lead_in': 377    
     },
     'Two Bridges Loop': {
         'distance': two_bridges_loop.distance,

@@ -1,88 +1,130 @@
+import numpy as np
+import control as ct 
+import matplotlib.pyplot as plt
 from activity_reader_tcx.activity_reader import *
 import matplotlib.pyplot as plt
-import simulator.simulator as sim
-import w_bal.w_bal as w_bal
-import numpy as np
-import optimization.optimal_pacing as opt
-import plotting.optimization_plots as optimization_plots
+from scipy.ndimage import gaussian_filter1d
+from w_bal.w_bal import *
+import utils.utils as utils
 
 
+def bicycle_update(t, x, u, params={}):
+    """Bicycle dynamics for control system.
+    
+    Parameters
+    ----------
+    x : array
+            System state: [position, velocity, remaining anaerobic capacity]
+    u : array
+            System input: [power]
 
-# cp = 265
-# w_prime = 26630
+    Returns
+    ----------
+    float
+        Bicycle acceleration 
+    """
+    
+    # System parameters
+    mass_rider = 78
+    mass_bike = 8
+    m = params.get('m', mass_rider + mass_bike)
+    g = params.get('g', 9.81)
+    my = params.get('my', 0.004)
+    b0 = params.get('b0', 0.091)
+    b1 = params.get('b1', 0.0087)
+    Iw = params.get('Iw', 0.14)
+    r = params.get('r', 0.33)
+    Cd = params.get('Cd', 0.7)
+    rho = params.get('rho', 1.2)
+    A = params.get('A', 0.4)
+    eta = params.get('eta', 1)
+    w_prime = params.get('w_prime', 26630)
+    cp = params.get('cp', 265)
 
-# bologna = ActivityReader("Bologna_tt.tcx")
-# bologna.remove_unactive_period(1000)
-# w_balance_ode_old = w_bal.w_prime_balance_ode(bologna.power, cp, w_prime)
-# w_balance_ode_gc = w_bal.w_prime_balance_ode(bologna.power, 279, 18500)
-# w_balance_ode_int = w_bal.w_prime_balance_ode(bologna.power, 269, 24836)
-# w_balance_ode_hn = w_bal.w_prime_balance_ode(bologna.power, 272, 20900)
-# w_balance_ode_reg = w_bal.w_prime_balance_ode(bologna.power, 271, 24463)
-# plt.plot(w_balance_ode_old)
-# plt.plot(w_balance_ode_gc)
-# plt.plot(w_balance_ode_int)
-# plt.plot(w_balance_ode_hn)
-# plt.plot(w_balance_ode_reg)
-# plt.legend(["Old", "Golden cheetah", "intervals.icu", "Highnorth", "Regression"])
-# plt.show()
+    # Variables for states and input
+    v = x[1]
+    w_bal = x[2]
+    power = u[0]
+    #dw_bal = 0
+    # if power < cp:
+    #     dw_bal = (1-w_bal/w_prime)*(cp-power)
+    # else:
+    #     dw_bal = -(power - cp)
+    dw_bal = -(power-cp)*(1-1/(1 + np.exp(-(power-cp)/3)) + (1-w_bal/w_prime)*(cp-power) * (1/(1 + np.exp(-(cp-power)/3))))
+    
+    dv = 1/v * 1/(m + Iw/r**2) * (eta*power - m*g*v*slope[int(t)] - my*m*g*v - b0*v - b1*v**2 - 0.5*Cd*rho*A*v**3)
+    
+    return np.array([v, dv, dw_bal])
+
+
+def bicycle_output(t, x, u, params):
+    return x
+
+
+def calculate_gradient(distance, elevation):
+    gradient = []
+    for i in range(len(distance)-1):
+        delta_elevation = elevation[i] - elevation[i+1]
+        delta_distance = distance[i] - distance[i+1]
+        if delta_distance != 0:
+            gradient.append(delta_elevation/delta_distance)
+        else:
+            gradient.append(0)
+    gradient.append(0)
+    return gradient
 
 activity = ActivityReader("Downtown_titans.tcx")
-activity.remove_period_after(24600)
-dist = activity.distance
-elev = activity.elevation
+activity.remove_unactive_period(1100)
 
+sigma = 3
+smoothed_elev = gaussian_filter1d(activity.elevation, sigma)
+
+slope = calculate_gradient(activity.distance, smoothed_elev)
+
+bicycle_system = ct.NonlinearIOSystem(bicycle_update, bicycle_output, states=3, name='bicycle', inputs=('u'), outputs=('p', 'v', 'w_bal'))
+u = activity.power
+t = activity.time
+mass_rider = 78
+mass_bike = 8
 params = {
-    'mass_rider': 78,
-    'mass_bike': 8,
+    'm': mass_bike + mass_rider,
+    'slope': slope,
     'g': 9.81,
-    'mu': 0.004,
+    'my': 0.004,
     'b0': 0.091,
     'b1': 0.0087,
     'Iw': 0.14,
-    'r': 0.33,
+    'rw': 0.33,
     'Cd': 0.7,
     'rho': 1.2,
     'A': 0.4,
-    'eta': 1,
-    'w_prime': 26630,
-    'cp': 265,
-    'alpha': 0.03,
-    'alpha_c': 0.01,
-    'c_max': 150,
-    'c': 80
+    'eta': 1
 }
-N = round(dist[-1]/10)
-time_guess = dist[-1]/1000*100
-time_grid = np.arange(0, time_guess, N)
-power = len(time_grid)*[params.get("w_prime")/time_guess + params.get("cp")]
 
-x0 = [0, 1, params.get("w_prime")]
-X, t_grid = sim.simulate_sys(power, time_grid, x0, dist, elev, params)
 
-optimization_opts = {
-    "N": N,
-    "time_initial_guess": time_guess,
-    "power_initial_guess": params.get('cp'),
-    "smooth_power_constraint": True,
-    "w_bal_model": "ODE",
-    "integration_method": "Euler",
-    "solver": "ipopt"
-}
-opt_details = {
-    "N": N,
-    "w_bal_model": optimization_opts.get("w_bal_model"),
-    "integration_method": optimization_opts.get("integration_method"),
-    "time_init_guess": optimization_opts.get("time_initial_guess"),
-}
-initialization = {
-    'pos_init': X[0,:],
-    'speed_init': X[1,:],
-    'w_bal_init': X[2,:],
-    'power_init': power,
-    'time_init': time_guess
-}
-sol, opti, T, U, X = opt.solve_opt_warmstart(activity.distance, activity.elevation, params, optimization_opts, initialization)
-stats = sol.stats()
-opt_details["iterations"] = stats['iter_count']
-opt_details["opt_time"] = stats['t_wall_total']
-optimization_plots.plot_optimization_results(sol, U, X, T, dist, elev, params, opt_details)
+response = ct.input_output_response(bicycle_system,  t, u, [0, activity.speed[0], 26630], params)
+t, y, u = response.time, response.outputs, response.inputs
+
+def mse(array1, array2):
+    squared_sum = [(elem1-elem2)**2 for elem1,elem2 in zip(array1, array2)]
+    return np.mean(squared_sum)/len(squared_sum)
+
+print(mse(activity.speed, y[1]))
+cp = 265
+w_prime = 26330
+w_bal = w_prime_balance_ode(activity.power, cp, w_prime)
+
+
+plt.subplot(2,1,1)
+plt.plot(t, y[1]*3.6)
+plt.plot(activity.time, [elem*3.6 for elem in activity.speed])
+plt.ylabel("Velocity [km/h]")
+plt.legend(["estimated velocity", "actual velocity"])
+
+plt.subplot(2,1,2)
+plt.plot(activity.distance, activity.elevation)
+plt.plot(activity.distance, smoothed_elev)
+plt.legend(['Elevation from TCX file', 'Smoothed elevation'])
+plt.ylabel("Elevation [m]")
+plt.xlabel("Distance [m]")
+plt.show()

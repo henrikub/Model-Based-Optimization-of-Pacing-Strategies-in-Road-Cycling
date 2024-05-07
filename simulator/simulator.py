@@ -3,7 +3,7 @@ from scipy.ndimage import gaussian_filter1d
 import utils.utils as utils
 import numpy as np
 
-def simulate_sys(power, time, x0, distance, elevation, params):
+def simulate_sys(power, x0, distance, elevation, params):
     # Mechanical model params
     mass_rider = params.get("mass_rider")
     mass_bike = params.get("mass_bike")
@@ -23,40 +23,51 @@ def simulate_sys(power, time, x0, distance, elevation, params):
     w_prime = params.get("w_prime")
     cp = params.get("cp")
 
-    sigma = 4
+    for i in range(len(distance)-1):
+        if distance[i] == distance[i+1]:
+            print(distance[i])
+            distance[i] = distance[i+1] + 0.01
+            
+    sigma = 2
     smoothed_elev = gaussian_filter1d(elevation, sigma)
 
     slope = utils.calculate_gradient(distance, smoothed_elev)
 
     interpolated_slope = ca.interpolant('Slope', 'bspline', [distance], slope)
-        
-    def system_dynamics(x, u):
+    interpolated_power = ca.interpolant('Power', 'bspline', [distance], power)
+
+    def system_dynamics(x):
         return ca.vertcat(x[1], 
-                (1/x[1] * 1/(m + Iw/r**2)) * (eta*u - mu*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3),
-                utils.smooth_w_balance_ode_derivative(u, cp, x, w_prime)) 
-
-    tf = time[-1]
-    N = len(time)
-    t_grid = np.linspace(0,tf,N)
+                (1/x[1] * 1/(m + Iw/r**2)) * (eta*interpolated_power(x[0]) - mu(x[0])*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3),
+                utils.smooth_w_balance_ode_derivative(interpolated_power(x[0]), cp, x, w_prime)) 
 
 
-    dt = tf/N  
+
+    tf = round(180*distance[-1]/1000)
+    N = round(distance[-1])
+
+    dt = 0.1 
+    t0 = 0
     x = ca.MX.sym('x', 3) 
-    u = ca.MX.sym('u', 1)  
-    f = system_dynamics(x, u)  
-    ode = {'x': x, 'p': u, 'ode': f}  
-    opts = {'tf': dt} 
-    F = ca.integrator('F', 'rk', ode, opts)  
+
+    f = system_dynamics(x)  
+    ode = {'x': x, 'ode': f}  
+
+    F = ca.integrator('F', 'rk', ode, t0, dt)   
 
     X = np.zeros((3, N))
-    U = power
 
     X[:,0] = x0
+    t_grid = []
+    t_grid.append(0)
     for k in range(N-1):
-        res = F(x0=X[:,k], p=U[k])  
-        X[:,k+1] = res['xf'].full().flatten()  
+        res = F(x0=X[:,k])
+        X[:,k+1] = res['xf'].full().flatten() 
+        t_grid.append(k*dt) 
+
     
-    return X, t_grid
+    end_index = np.argwhere(np.array(X[0,:]) >= distance[-1])[0][0]
+    return X[:,0:end_index], t_grid[:end_index]
 
 
 def create_initialization(time, x0, distance, elevation, params):
@@ -79,7 +90,7 @@ def create_initialization(time, x0, distance, elevation, params):
     w_prime = params.get("w_prime")
     cp = params.get("cp")
 
-    sigma = 4
+    sigma = 2
     smoothed_elev = gaussian_filter1d(elevation, sigma)
 
     slope = utils.calculate_gradient(distance, smoothed_elev)

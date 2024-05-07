@@ -14,8 +14,8 @@ def nonlinear_2(P, AWC, CP):
     return AWC/(P-CP)
 
 
-def nonlinear_3(P, W_prime, CP,):
-    return (W_prime/(P-CP))-(W_prime/(930-CP))
+def nonlinear_3(P, W_prime, CP):
+    return (W_prime/(P-CP))-(W_prime/(933-CP))
 
 
 def nonlinear_4(P, AWC, CP, P_max, tau):

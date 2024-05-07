@@ -52,30 +52,3 @@ ax.plot(x, 0.5 + 0.5*np.tanh((x-0)/10), label=r'$\frac{1}{2} + \frac{1}{2}\tanh(
 plt.title("Smooth transition function")
 ax.legend()
 plt.show()
-
-power = 1000*[200] + 1000*[251] 
-time = np.arange(0,len(power))
-N = len(power) 
-
-dt = time[-1]/N  
-x = ca.MX.sym('x', 1) 
-u = ca.MX.sym('u', 1) 
-f = smooth_derivative(x, u) 
-ode = {'x': x, 'p': u, 'ode': f}  
-opts = {'tf': dt} 
-F = ca.integrator('F', 'rk', ode, opts)  
-
-X = np.zeros(N)
-U = power
-
-X[0] = w_prime
-for k in range(N-1):
-    res = F(x0=X[k], p=U[k])  
-    X[k+1] = res['xf'].full().flatten()  
-
-w_bal_ode = w_prime_balance_ode(power, cp, w_prime)
-
-plt.plot(time, X)
-plt.plot(time, w_bal_ode)
-plt.legend(["Integrated smooth W'bal", "Actual W'bal"])
-plt.show()

@@ -31,7 +31,7 @@ def solve_opt(distance, elevation, params, optimization_opts, initialization):
     w_prime = params.get("w_prime")
     cp = params.get("cp")
 
-    sigma = 4
+    sigma = 2
     smoothed_elev = gaussian_filter1d(elevation, sigma)
 
     slope = utils.calculate_gradient(distance, smoothed_elev)
