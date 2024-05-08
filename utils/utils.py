@@ -82,3 +82,13 @@ def find_optimal_wbal(distance):
         opt_results = json.load(file)
     index = int(np.argwhere(opt_results['distance'] >= distance)[0])
     return opt_results['w_bal'][index]
+
+
+def moving_avg(x, window_size):
+    return np.convolve(x, np.ones(window_size), 'valid') / window_size
+
+def normalized_power(power):
+    ma = moving_avg(power, 30)
+    ma_r = np.power(ma, 4)
+    avg = np.mean(ma_r)
+    return np.power(avg, 1/4)

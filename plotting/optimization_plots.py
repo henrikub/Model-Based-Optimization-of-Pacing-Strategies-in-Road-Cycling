@@ -1,7 +1,9 @@
 import matplotlib.pyplot as plt
+from utils.utils import normalized_power
 import datetime
+import numpy as np
 
-def plot_optimization_results(sol, U, X, T, distance, elevation, params, opt_details, streamlit=False):
+def plot_optimization_results(sol, U, X, T, distance, elevation, params, opt_details, streamlit=False, baseline_activity = None, baseline_power = None):
     cp = params.get("cp")
     alpha = params.get("alpha")
     # alpha_c = params.get("alpha_c")
@@ -23,11 +25,15 @@ def plot_optimization_results(sol, U, X, T, distance, elevation, params, opt_det
 
     ax[0].set_title(f"The optimal time is {str(datetime.timedelta(seconds=round(optimal_time)))}")
     ax[0].set_ylabel("Power [W]")
-    ax[0].set_ylim(0,max(max_power)+10)
+    ax[0].set_ylim(0,max(max_power)+50)
     ax[0].plot(pos, max_power)
     ax[0].plot(pos, optimal_power)
     ax[0].plot(round(pos[-1])*[cp], color='tab:gray', linestyle='dashed')
-    ax[0].legend(["Maximum attainable power", "Optimal power output", "CP"], loc='upper right')
+    if baseline_activity != None:
+        ax[0].plot(baseline_activity.distance, baseline_power)
+        ax[0].legend(["Maximum attainable power", "Optimal power output", "CP", "Intuitive pacing power output"], loc='upper right')
+    else:
+        ax[0].legend(["Maximum attainable power", "Optimal power output", "CP"], loc='upper right')
     ax1_twin = ax[0].twinx()
     ax1_twin.set_ylabel('Elevation [m]', color='tab:red')
     ax1_twin.plot(distance, elevation, color='tab:red')
@@ -55,8 +61,8 @@ def plot_optimization_results(sol, U, X, T, distance, elevation, params, opt_det
     ax3_twin.tick_params(axis='y', labelcolor='tab:red')
     ax3_twin.legend(["Elevation Profile"], loc='lower left')
 
-    fig.text(0.5, 0.02, f"Integration method: {opt_details.get('integration_method')}, points = {len(distance)}, N = {opt_details.get('N')}, W'balance model: {opt_details.get('w_bal_model')}, iterations: {opt_details.get('iterations')}, time: {str(datetime.timedelta(seconds=round(opt_details.get('opt_time'))))}", horizontalalignment="center")
-
+    fig.text(0.5, 0.04, f"Integration method: {opt_details.get('integration_method')}, points = {len(distance)}, N = {opt_details.get('N')}, W'balance model: {opt_details.get('w_bal_model')}, iterations: {opt_details.get('iterations')}, time: {str(datetime.timedelta(seconds=round(opt_details.get('opt_time'))))}", horizontalalignment="center")
+    fig.text(0.4, 0.02, f"Avg power: {round(np.mean(sol.value(U)))}W, Normalized Power: {round(normalized_power(sol.value(U)))}W")
     if streamlit:
         return fig
     else:

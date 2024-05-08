@@ -43,7 +43,6 @@ def simulate_sys(power, x0, distance, elevation, params):
 
 
 
-    tf = round(180*distance[-1]/1000)
     N = round(distance[-1])
 
     dt = 0.1 

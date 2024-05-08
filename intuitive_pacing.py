@@ -16,19 +16,24 @@ with open('routes.json', 'r') as file:
     routes_dict = json.load(file)
 
 activity = ActivityReader("cobbled_climbs_intuitive_pacing.tcx")
+
 activity.remove_period_after(18748)
 activity.remove_period_before(routes_dict[route_name]['lead_in'])
 activity.time = np.array(activity.time) - activity.time[0]
+activity.distance = np.array(activity.distance) - activity.distance[0]
+smoothed_power = gaussian_filter1d(activity.power,4)
 
-cp = 287
-w_prime = 23800
+print("Normalized power:", utils.normalized_power(activity.power))
+
+cp = 288
+w_prime = 23600
 max_power = 933
 alpha = (max_power-cp)/w_prime
 
 w_bal_hn = w_prime_balance_ode(activity.power, 286, 26900)
 w_bal_i = w_prime_balance_ode(activity.power, 274, 35000)
 w_bal_gc = w_prime_balance_ode(activity.power, 288, 23600)
-w_bal_r = w_prime_balance_ode(activity.power, 287, 23800)
+w_bal_r = w_prime_balance_ode(activity.power, 290, 25000)
 w_bal_gc_peak = w_prime_balance_ode(activity.power, 306, 20000)
 
 plt.plot(activity.distance, w_bal_hn)
@@ -88,11 +93,11 @@ params = {
 X, t_grid = simulate_sys(activity.power, [activity.distance[0], activity.speed[0], w_prime], activity.distance, activity.elevation, params)
 plt.title(f"The simulated finish time is {str(datetime.timedelta(seconds=round(t_grid[-1])))}, and the actual finish time was {str(datetime.timedelta(seconds=round(activity.time[-1])))}")
 
-plt.plot(activity.time, activity.speed)
-plt.plot(t_grid, X[1])
+# plt.plot(activity.time, activity.speed)
+# plt.plot(t_grid, X[1])
 
-# plt.plot(activity.distance, activity.speed)
-# plt.plot(X[0], X[1])
+plt.plot(activity.distance, activity.speed)
+plt.plot(X[0], X[1])
 
 plt.legend(["Actual velocity", "Simulated velocity"])
 plt.xlabel("Time [s]")
@@ -101,22 +106,22 @@ plt.show()
 
 
 # simulate holding a constant power equal to the avg power of the activity
-avg_power = np.mean(activity.power)
-print("Average power: ", avg_power)
-X, t_grid = simulate_sys(len(activity.power)*[avg_power], [activity.distance[0], activity.speed[0], w_prime], activity.distance, activity.elevation, params)
-plt.plot(X[0], X[1])
-plt.plot(activity.distance, activity.speed)
-plt.legend(["Simulated velocity for constant power", "Activity velocity"])
-plt.title(f"The simulated finish time for constant power is {str(datetime.timedelta(seconds=round(t_grid[-1])))}")
-plt.xlabel("Distance [m]")
-plt.ylabel("Velocity [m/s]")
-plt.show()
+# avg_power = np.mean(activity.power)
+# print("Average power: ", avg_power)
+# X, t_grid = simulate_sys(len(activity.power)*[avg_power], [activity.distance[0], activity.speed[0], w_prime], activity.distance, activity.elevation, params)
+# plt.plot(X[0], X[1])
+# plt.plot(activity.distance, activity.speed)
+# plt.legend(["Simulated velocity for constant power", "Activity velocity"])
+# plt.title(f"The simulated finish time for constant power is {str(datetime.timedelta(seconds=round(t_grid[-1])))}")
+# plt.xlabel("Distance [m]")
+# plt.ylabel("Velocity [m/s]")
+# plt.show()
 
 w_bal_ode = w_prime_balance_ode(activity.power, cp, w_prime)
 max_power_constraint = alpha*np.array(w_bal_ode) + cp
 fig, ax = plt.subplots(3,1)
 ax[0].set_title("Intuitive pacing attempt")
-ax[0].plot(activity.distance, gaussian_filter1d(activity.power,4))
+ax[0].plot(activity.distance, smoothed_power)
 ax[0].plot(activity.distance, max_power_constraint)
 ax[0].plot(activity.distance, len(activity.distance)*[cp], color='gray', linestyle='dashed')
 ax[0].legend(["Smoothed power", "Maximum attainable power"], loc='upper right')

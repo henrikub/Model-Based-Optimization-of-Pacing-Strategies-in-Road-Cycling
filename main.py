@@ -5,18 +5,20 @@ import plotting.optimization_plots as opt_plt
 import simulator.simulator as sim
 import matplotlib.pyplot as plt
 from utils.utils import w_prime_balance_ode
+from activity_reader_tcx.activity_reader import *
+from scipy.ndimage import gaussian_filter1d
 
 route_name = "Cobbled Climbs"
 num_laps = 2
 integration_method = "RK4"
-negative_split = False
-w_bal_start = 0
+negative_split = True
+w_bal_start = 90/100*25000
 w_bal_end = 0
 
 height = 1.80
 mass = 78
-w_prime = 23600
-cp = 288
+w_prime = 25000
+cp = 290
 max_power = 933
 
 routes_dict = {}
@@ -27,6 +29,14 @@ distance = routes_dict[route_name]['distance']
 elevation = routes_dict[route_name]['elevation']
 friction = routes_dict[route_name]['friction']
 lead_in = routes_dict[route_name]['lead_in']
+
+# Baseline intuitive pacing
+activity = ActivityReader("cobbled_climbs_intuitive_pacing.tcx")
+activity.remove_period_after(18748)
+activity.remove_period_before(lead_in)
+activity.time = np.array(activity.time) - activity.time[0]
+activity.distance = np.array(activity.distance) - activity.distance[0]
+smoothed_power = gaussian_filter1d(activity.power,4)
 
 if num_laps != 1:
     new_elevation = []
@@ -100,7 +110,7 @@ opt_details = {
     "iterations": stats['iter_count'],
     "opt_time": stats['t_wall_total']
 }
-opt_plt.plot_optimization_results(sol_rk4, U_rk4, X_rk4, T_rk4, distance, elevation, params, opt_details, False)
+opt_plt.plot_optimization_results(sol_rk4, U_rk4, X_rk4, T_rk4, distance, elevation, params, opt_details, False, activity, smoothed_power)
 
 # optimization_opts["integration_method"] = "Euler"
 # sol_e, opti_e, T_e, U_e, X_e = opt.solve_opt(distance, elevation, params, optimization_opts, initialization)
