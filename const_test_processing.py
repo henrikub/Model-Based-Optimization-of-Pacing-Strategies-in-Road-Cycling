@@ -31,3 +31,5 @@ fitted_nl3 = nonlinear_3(power, w_prime_nl3, cp_nl3)
 print("Params linear tw: CP = ", round(cp_ltw), " w': ", round(w_prime_ltw))
 print("Params nonlinear 2: CP = ", round(cp_nl2), " w': ", round(w_prime_nl2))
 print("Params nonlinear 3: CP = ", round(cp_nl3), " w': ", round(w_prime_nl3))
+
+print("r squared nonlinear 3", r_squared(time_points, power_points, fitted_nl3))

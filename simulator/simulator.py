@@ -43,7 +43,7 @@ def simulate_sys(power, x0, distance, elevation, params):
 
 
 
-    N = round(distance[-1])
+    N = round(distance[-1])*2
 
     dt = 0.1 
     t0 = 0

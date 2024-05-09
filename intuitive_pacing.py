@@ -23,28 +23,28 @@ activity.time = np.array(activity.time) - activity.time[0]
 activity.distance = np.array(activity.distance) - activity.distance[0]
 smoothed_power = gaussian_filter1d(activity.power,4)
 
-print("Normalized power:", utils.normalized_power(activity.power))
-
-cp = 288
-w_prime = 23600
+height = 1.8
+mass = 78
+cp = 290
+w_prime = 25000
 max_power = 933
 alpha = (max_power-cp)/w_prime
 
-w_bal_hn = w_prime_balance_ode(activity.power, 286, 26900)
-w_bal_i = w_prime_balance_ode(activity.power, 274, 35000)
-w_bal_gc = w_prime_balance_ode(activity.power, 288, 23600)
-w_bal_r = w_prime_balance_ode(activity.power, 290, 25000)
-w_bal_gc_peak = w_prime_balance_ode(activity.power, 306, 20000)
+# w_bal_hn = w_prime_balance_ode(activity.power, 286, 26900)
+# w_bal_i = w_prime_balance_ode(activity.power, 274, 35000)
+# w_bal_gc = w_prime_balance_ode(activity.power, 288, 23600)
+# w_bal_r = w_prime_balance_ode(activity.power, 269, 39200)
+# w_bal_final = w_prime_balance_ode(activity.power, 290, 25000)
 
-plt.plot(activity.distance, w_bal_hn)
-plt.plot(activity.distance, w_bal_i)
-plt.plot(activity.distance, w_bal_gc)
-plt.plot(activity.distance, w_bal_r)
-plt.plot(activity.distance, w_bal_gc_peak)
-plt.legend(["HighNorth", "intervals.icu", "GoldenCheetah", "Regression", "Golden Cheetah Peak estimate"])
-plt.xlabel("Distance [m]")
-plt.ylabel("W'balance [J]")
-plt.show()
+# plt.plot(activity.distance, w_bal_hn)
+# plt.plot(activity.distance, w_bal_i)
+# plt.plot(activity.distance, w_bal_gc)
+# plt.plot(activity.distance, w_bal_r)
+# plt.plot(activity.distance, w_bal_final)
+# plt.legend(["HighNorth", "Intervals.icu", "GoldenCheetah", "Regression", "CP = 290, W' = 25kJ"])
+# plt.xlabel("Distance [m]")
+# plt.ylabel("W'balance [J]")
+# plt.show()
 
 
 distance = routes_dict[route_name]['distance']
@@ -90,41 +90,71 @@ params = {
     # 'c_max': 150,
     # 'c': 80
 }
-X, t_grid = simulate_sys(activity.power, [activity.distance[0], activity.speed[0], w_prime], activity.distance, activity.elevation, params)
-plt.title(f"The simulated finish time is {str(datetime.timedelta(seconds=round(t_grid[-1])))}, and the actual finish time was {str(datetime.timedelta(seconds=round(activity.time[-1])))}")
+# X_general_A, t_grid_general_A = simulate_sys(activity.power, [activity.distance[0], activity.speed[0], w_prime], activity.distance, activity.elevation, params)
+# params['A'] = 0.0293*height**(0.725)*mass**(0.441) + 0.0604
+# print(params['A'])
+# sim_time_general_A = datetime.timedelta(seconds=round(t_grid_general_A[-1]))
 
-# plt.plot(activity.time, activity.speed)
-# plt.plot(t_grid, X[1])
+# X_personal_A, t_grid_personal_A = simulate_sys(activity.power, [activity.distance[0], activity.speed[0], w_prime], activity.distance, activity.elevation, params)
+# sim_time_personal_A = datetime.timedelta(seconds=round(t_grid_personal_A[-1]))
+# actual_time = datetime.timedelta(seconds=round(activity.time[-1]))
 
-plt.plot(activity.distance, activity.speed)
-plt.plot(X[0], X[1])
-
-plt.legend(["Actual velocity", "Simulated velocity"])
-plt.xlabel("Time [s]")
-plt.ylabel("Velocity [m/s]")
-plt.show()
-
-
-# simulate holding a constant power equal to the avg power of the activity
-# avg_power = np.mean(activity.power)
-# print("Average power: ", avg_power)
-# X, t_grid = simulate_sys(len(activity.power)*[avg_power], [activity.distance[0], activity.speed[0], w_prime], activity.distance, activity.elevation, params)
-# plt.plot(X[0], X[1])
-# plt.plot(activity.distance, activity.speed)
-# plt.legend(["Simulated velocity for constant power", "Activity velocity"])
-# plt.title(f"The simulated finish time for constant power is {str(datetime.timedelta(seconds=round(t_grid[-1])))}")
-# plt.xlabel("Distance [m]")
-# plt.ylabel("Velocity [m/s]")
+# fig, ax = plt.subplots()
+# ax.plot(activity.distance, activity.speed, label="Actual velocity")
+# ax.plot(X_general_A[0], X_general_A[1], label= r'Simulated velocity with $A = 0.4$')
+# ax.set_xlabel("Distance [m]")
+# ax.set_ylabel("Velocity [m/s]")
+# ax.legend()
+# fig.text(0.4, 0.02, f"Simulated time = {str(sim_time_general_A)}, actual time = {str(actual_time)}")
 # plt.show()
 
+# fig, ax = plt.subplots()
+# ax.plot(activity.distance, activity.speed, label="Actual velocity")
+# ax.plot(X_personal_A[0], X_personal_A[1], label=r'Simulated velocity with $A_{TT}$')
+# ax.set_xlabel("Distance [m]")
+# ax.set_ylabel("Velocity [m/s]")
+# ax.legend()
+# fig.text(0.4, 0.02, f"Simulated time = {str(sim_time_personal_A)}, actual time = {str(actual_time)}")
+# plt.show()
+
+
+# Simulate constant power 
+const_power = 292
+X_const_power, t_grid_const_power = simulate_sys(len(activity.power)*[const_power], [activity.distance[0], activity.speed[0], w_prime], activity.distance, activity.elevation, params)
+finish_time_const_power = datetime.timedelta(seconds=round(t_grid_const_power[-1]))
+w_bal_const_power = utils.w_prime_balance_ode([const_power]*len(t_grid_const_power), t_grid_const_power, params.get('cp'), params.get('w_prime'))
+
+max_const_power = 303
+X_max_const_power, t_grid_max_const_power = simulate_sys(len(activity.power)*[max_const_power], [activity.distance[0], activity.speed[0], w_prime], activity.distance, activity.elevation, params)
+finish_time_max_const_power = datetime.timedelta(seconds=round(t_grid_max_const_power[-1]))
+w_bal_max_const_power = utils.w_prime_balance_ode([max_const_power]*len(t_grid_max_const_power), t_grid_max_const_power, params.get('cp'), params.get('w_prime'))
+
+
+fig, ax = plt.subplots(2,1)
+ax[0].plot(X_const_power[0], X_const_power[1])
+ax[0].plot(X_max_const_power[0], X_max_const_power[1])
+ax[0].legend([f"Simulated velocity for P = {const_power}W", f"Simulated velocity for P = {max_const_power}W"])
+ax[0].set_ylabel("Velocity [m/s]")
+
+ax[1].plot(X_const_power[0], w_bal_const_power)
+ax[1].plot(X_max_const_power[0], w_bal_max_const_power)
+ax[1].legend([f"W'balance for P = {const_power}W", f"W'balance for P = {max_const_power}W"])
+ax[1].set_ylabel("W'balance [J]")
+ax[1].set_xlabel("Distance [m]")
+
+fig.text(0.4, 0.03, f"Finish time for P = {const_power}W is {str(finish_time_const_power)}")
+fig.text(0.4, 0.01, f"Finish time for P = {max_const_power}W is {str(finish_time_max_const_power)}")
+plt.show()
+
+# Plot the intuitive pacing attempt
 w_bal_ode = w_prime_balance_ode(activity.power, cp, w_prime)
 max_power_constraint = alpha*np.array(w_bal_ode) + cp
 fig, ax = plt.subplots(3,1)
 ax[0].set_title("Intuitive pacing attempt")
-ax[0].plot(activity.distance, smoothed_power)
-ax[0].plot(activity.distance, max_power_constraint)
-ax[0].plot(activity.distance, len(activity.distance)*[cp], color='gray', linestyle='dashed')
-ax[0].legend(["Smoothed power", "Maximum attainable power"], loc='upper right')
+ax[0].plot(activity.distance, max_power_constraint, zorder=3)
+ax[0].plot(activity.distance, smoothed_power, zorder=4)
+ax[0].plot(activity.distance, len(activity.distance)*[cp], color='gray', linestyle='dashed', zorder=2)
+ax[0].legend(["Maximum attainable power", "Smoothed power", "CP"], loc='upper right')
 ax[0].set_ylabel("Power [W]")
 ax0_twin = ax[0].twinx()
 ax0_twin.plot(activity.distance, activity.elevation, color='red')
@@ -132,7 +162,7 @@ ax0_twin.set_ylabel('Elevation [m]', color='tab:red')
 ax0_twin.tick_params(axis='y', labelcolor='tab:red')
 ax0_twin.legend(["Elevation Profile"], loc='lower left')
 
-ax[1].plot(activity.distance, w_bal_ode)
+ax[1].plot(activity.distance, w_bal_ode, zorder=2)
 ax[1].set_ylabel("W'balance [J]")
 ax[1].legend(["W'balance"], loc='upper right')
 ax1_twin = ax[1].twinx()
@@ -141,7 +171,7 @@ ax1_twin.set_ylabel('Elevation [m]', color='tab:red')
 ax1_twin.tick_params(axis='y', labelcolor='tab:red')
 ax1_twin.legend(["Elevation Profile"], loc='lower left')
 
-ax[2].plot(activity.distance, activity.heart_rate)
+ax[2].plot(activity.distance, activity.heart_rate, zorder=2)
 ax[2].set_ylabel("Heart Rate [bpm]")
 ax[2].legend(["Heart Rate"], loc='upper right')
 ax2_twin = ax[2].twinx()
@@ -150,4 +180,11 @@ ax2_twin.set_ylabel('Elevation [m]', color='tab:red')
 ax2_twin.tick_params(axis='y', labelcolor='tab:red')
 ax2_twin.legend(["Elevation Profile"], loc='lower left')
 ax[2].set_xlabel("Distance [m]")
+
+ax[0].set_zorder(ax0_twin.get_zorder()+1)
+ax[1].set_zorder(ax0_twin.get_zorder()+1)
+ax[2].set_zorder(ax0_twin.get_zorder()+1)
+ax[0].patch.set_visible(False)
+ax[1].patch.set_visible(False)
+ax[2].patch.set_visible(False)
 plt.show()
