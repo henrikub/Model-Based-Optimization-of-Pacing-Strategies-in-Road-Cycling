@@ -52,3 +52,4 @@ ax.plot(x, 0.5 + 0.5*np.tanh((x-0)/10), label=r'$\frac{1}{2} + \frac{1}{2}\tanh(
 plt.title("Smooth transition function")
 ax.legend()
 plt.show()
+

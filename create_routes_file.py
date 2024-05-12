@@ -73,7 +73,7 @@ for d in hilly_route.distance:
         hilly_route_friction.append(surface_friction['pavement'])
 
 cobbled_climbs = ActivityReader("cobbled_climbs_intuitive_pacing.tcx")
-cobbled_climbs.remove_period_after(9560)
+cobbled_climbs.remove_period_after(9183 + 377)
 
 cobbled_climbs_friction = []
 for d in cobbled_climbs.distance:
@@ -107,6 +107,31 @@ for d in two_bridges_loop.distance:
 park_perimeter_loop = ActivityReader("Park_perimeter_loop.tcx")
 park_perimeter_loop.remove_period_after(9800 + 100)
 park_perimeter_loop_friction = len(park_perimeter_loop.distance)*[surface_friction['pavement']]
+
+# Add the final point to each route
+downtown_titans.distance.append(24600 + 100)
+downtown_titans.elevation.append(downtown_titans.elevation[-1])
+downtown_titans_friction.append(downtown_titans_friction[-1])
+
+mech_isle_loop.distance.append(4000 + 100)
+mech_isle_loop.elevation.append(mech_isle_loop.elevation[-1])
+mech_isle_loop_friction.append(mech_isle_loop_friction[-1])
+
+hilly_route.distance.append(9100 + 400)
+hilly_route.elevation.append(hilly_route.elevation[-1])
+hilly_route_friction.append(hilly_route_friction[-1])
+
+cobbled_climbs.distance.append(9183 + 377)
+cobbled_climbs.elevation.append(cobbled_climbs.elevation[-1])
+cobbled_climbs_friction.append(cobbled_climbs_friction[-1])
+
+two_bridges_loop.distance.append(7100)
+two_bridges_loop.elevation.append(two_bridges_loop.elevation[-1])
+two_bridges_loop_friction.append(two_bridges_loop_friction[-1])
+
+park_perimeter_loop.distance.append(9800 + 100)
+park_perimeter_loop.elevation.append(park_perimeter_loop.elevation[-1])
+park_perimeter_loop_friction.append(park_perimeter_loop_friction[-1])
 
 routes_dict = {
     'Downtown Titans': {
@@ -147,7 +172,6 @@ routes_dict = {
     }                     
 }
 for key in routes_dict:
-    
     if routes_dict[key]['lead_in'] != 0:
         index_start = np.argwhere(np.array(routes_dict[key]['distance']) > routes_dict[key]['lead_in'])[0][0]
         routes_dict[key]['distance'] = list(np.array(routes_dict[key]['distance'][index_start:-1]) - routes_dict[key]['lead_in'])
