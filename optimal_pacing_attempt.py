@@ -15,12 +15,18 @@ routes_dict = {}
 with open('routes.json', 'r') as file:
     routes_dict = json.load(file)
 
-activity = ActivityReader("cobbled_climbs_intuitive_pacing.tcx")
+opt_result = {}
+with open('opt_results_json/optimal_pacing_attempt.json', 'r') as f:
+    opt_result = json.load(f)
 
-activity.remove_period_after(18748)
+print(opt_result['power'])
+activity = ActivityReader("cobbled_climbs_optimal_pacing.tcx")
+
+# activity.remove_period_after(18748)
 activity.remove_period_before(routes_dict[route_name]['lead_in'])
 activity.time = np.array(activity.time) - activity.time[0]
 activity.distance = np.array(activity.distance) - activity.distance[0]
+opt_result['distance'] = np.array(opt_result['distance']) - opt_result['distance'][0]
 smoothed_power = gaussian_filter1d(activity.power,4)
 
 height = 1.8
@@ -30,21 +36,6 @@ w_prime = 25000
 max_power = 933
 alpha = (max_power-cp)/w_prime
 
-# w_bal_hn = w_prime_balance_ode(activity.power, 286, 26900)
-# w_bal_i = w_prime_balance_ode(activity.power, 274, 35000)
-# w_bal_gc = w_prime_balance_ode(activity.power, 288, 23600)
-# w_bal_r = w_prime_balance_ode(activity.power, 269, 39200)
-# w_bal_final = w_prime_balance_ode(activity.power, 290, 25000)
-
-# plt.plot(activity.distance, w_bal_hn)
-# plt.plot(activity.distance, w_bal_i)
-# plt.plot(activity.distance, w_bal_gc)
-# plt.plot(activity.distance, w_bal_r)
-# plt.plot(activity.distance, w_bal_final)
-# plt.legend(["HighNorth", "Intervals.icu", "GoldenCheetah", "Regression", "CP = 290, W' = 25kJ"])
-# plt.xlabel("Distance [m]")
-# plt.ylabel("W'balance [J]")
-# plt.show()
 
 
 distance = routes_dict[route_name]['distance']
@@ -90,6 +81,7 @@ params = {
     # 'c_max': 150,
     # 'c': 80
 }
+
 # X_general_A, t_grid_general_A = simulate_sys(activity.power, [activity.distance[0], activity.speed[0], w_prime], activity.distance, activity.elevation, params)
 # params['A'] = 0.0293*height**(0.725)*mass**(0.441) + 0.0604
 # print(params['A'])
@@ -119,42 +111,43 @@ params = {
 
 
 # Simulate constant power 
-const_power = 292
-X_const_power, t_grid_const_power = simulate_sys(len(activity.power)*[const_power], [activity.distance[0], activity.speed[0], w_prime], activity.distance, activity.elevation, params)
-finish_time_const_power = datetime.timedelta(seconds=round(t_grid_const_power[-1]))
-w_bal_const_power = utils.w_prime_balance_ode([const_power]*len(t_grid_const_power), t_grid_const_power, params.get('cp'), params.get('w_prime'))
+# const_power = 292
+# X_const_power, t_grid_const_power = simulate_sys(len(activity.power)*[const_power], [activity.distance[0], activity.speed[0], w_prime], activity.distance, activity.elevation, params)
+# finish_time_const_power = datetime.timedelta(seconds=round(t_grid_const_power[-1]))
+# w_bal_const_power = utils.w_prime_balance_ode([const_power]*len(t_grid_const_power), t_grid_const_power, params.get('cp'), params.get('w_prime'))
 
-max_const_power = 303
-X_max_const_power, t_grid_max_const_power = simulate_sys(len(activity.power)*[max_const_power], [activity.distance[0], activity.speed[0], w_prime], activity.distance, activity.elevation, params)
-finish_time_max_const_power = datetime.timedelta(seconds=round(t_grid_max_const_power[-1]))
-w_bal_max_const_power = utils.w_prime_balance_ode([max_const_power]*len(t_grid_max_const_power), t_grid_max_const_power, params.get('cp'), params.get('w_prime'))
+# max_const_power = 303
+# X_max_const_power, t_grid_max_const_power = simulate_sys(len(activity.power)*[max_const_power], [activity.distance[0], activity.speed[0], w_prime], activity.distance, activity.elevation, params)
+# finish_time_max_const_power = datetime.timedelta(seconds=round(t_grid_max_const_power[-1]))
+# w_bal_max_const_power = utils.w_prime_balance_ode([max_const_power]*len(t_grid_max_const_power), t_grid_max_const_power, params.get('cp'), params.get('w_prime'))
 
 
-fig, ax = plt.subplots(2,1)
-ax[0].plot(X_const_power[0], X_const_power[1])
-ax[0].plot(X_max_const_power[0], X_max_const_power[1])
-ax[0].legend([f"Simulated velocity for P = {const_power}W", f"Simulated velocity for P = {max_const_power}W"])
-ax[0].set_ylabel("Velocity [m/s]")
+# fig, ax = plt.subplots(2,1)
+# ax[0].plot(X_const_power[0], X_const_power[1])
+# ax[0].plot(X_max_const_power[0], X_max_const_power[1])
+# ax[0].legend([f"Simulated velocity for P = {const_power}W", f"Simulated velocity for P = {max_const_power}W"])
+# ax[0].set_ylabel("Velocity [m/s]")
 
-ax[1].plot(X_const_power[0], w_bal_const_power)
-ax[1].plot(X_max_const_power[0], w_bal_max_const_power)
-ax[1].legend([f"W'balance for P = {const_power}W", f"W'balance for P = {max_const_power}W"])
-ax[1].set_ylabel("W'balance [J]")
-ax[1].set_xlabel("Distance [m]")
+# ax[1].plot(X_const_power[0], w_bal_const_power)
+# ax[1].plot(X_max_const_power[0], w_bal_max_const_power)
+# ax[1].legend([f"W'balance for P = {const_power}W", f"W'balance for P = {max_const_power}W"])
+# ax[1].set_ylabel("W'balance [J]")
+# ax[1].set_xlabel("Distance [m]")
 
-fig.text(0.4, 0.03, f"Finish time for P = {const_power}W is {str(finish_time_const_power)}")
-fig.text(0.4, 0.01, f"Finish time for P = {max_const_power}W is {str(finish_time_max_const_power)}")
-plt.show()
+# fig.text(0.4, 0.03, f"Finish time for P = {const_power}W is {str(finish_time_const_power)}")
+# fig.text(0.4, 0.01, f"Finish time for P = {max_const_power}W is {str(finish_time_max_const_power)}")
+# plt.show()
 
-# Plot the intuitive pacing attempt
+# Plot the optimal pacing attempt
 w_bal_ode = w_prime_balance_ode(activity.power, cp, w_prime)
 max_power_constraint = alpha*np.array(w_bal_ode) + cp
 fig, ax = plt.subplots(3,1)
-ax[0].set_title("Intuitive pacing attempt")
+ax[0].set_title("Optimal pacing attempt")
 ax[0].plot(activity.distance, max_power_constraint, zorder=3)
+ax[0].plot(opt_result['distance'], opt_result['power'], zorder=2)
 ax[0].plot(activity.distance, smoothed_power, zorder=4)
-ax[0].plot(activity.distance, len(activity.distance)*[cp], color='gray', linestyle='dashed', zorder=2)
-ax[0].legend(["Maximum attainable power", "Smoothed power", "CP"], loc='upper right')
+ax[0].plot(activity.distance, len(activity.distance)*[cp], color='gray', linestyle='dashed', zorder=1)
+ax[0].legend(["Maximum attainable power", "Optimal power", "Smoothed power", "CP"], loc='upper right')
 ax[0].set_ylabel("Power [W]")
 ax0_twin = ax[0].twinx()
 ax0_twin.plot(activity.distance, activity.elevation, color='red')
@@ -163,8 +156,9 @@ ax0_twin.tick_params(axis='y', labelcolor='tab:red')
 ax0_twin.legend(["Elevation Profile"], loc='lower left')
 
 ax[1].plot(activity.distance, w_bal_ode, zorder=2)
+ax[1].plot(opt_result['distance'], opt_result['w_bal'])
 ax[1].set_ylabel("W'balance [J]")
-ax[1].legend(["W'balance"], loc='upper right')
+ax[1].legend(["W'balance", "Optimal W'balance"], loc='upper right')
 ax1_twin = ax[1].twinx()
 ax1_twin.plot(activity.distance, activity.elevation, color='red')
 ax1_twin.set_ylabel('Elevation [m]', color='tab:red')
