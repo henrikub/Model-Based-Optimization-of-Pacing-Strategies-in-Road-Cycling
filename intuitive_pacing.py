@@ -23,6 +23,10 @@ activity.time = np.array(activity.time) - activity.time[0]
 activity.distance = np.array(activity.distance) - activity.distance[0]
 smoothed_power = gaussian_filter1d(activity.power,4)
 
+print("average power: ", round(np.mean(activity.power)))
+print("Normalized power: ", round(utils.normalized_power(activity.power)))
+
+
 height = 1.8
 mass = 78
 cp = 290
@@ -90,35 +94,36 @@ params = {
     # 'c_max': 150,
     # 'c': 80
 }
-# X_general_A, t_grid_general_A = simulate_sys(activity.power, [activity.distance[0], activity.speed[0], w_prime], activity.distance, activity.elevation, params)
-# params['A'] = 0.0293*height**(0.725)*mass**(0.441) + 0.0604
-# print(params['A'])
-# sim_time_general_A = datetime.timedelta(seconds=round(t_grid_general_A[-1]))
+X_general_A, t_grid_general_A = simulate_sys(activity.power, [activity.distance[0], activity.speed[0], w_prime], activity.distance, activity.elevation, params)
+params['A'] = 0.0293*height**(0.725)*mass**(0.441) + 0.0604
+print(params['A'])
+sim_time_general_A = datetime.timedelta(seconds=round(t_grid_general_A[-1]))
 
-# X_personal_A, t_grid_personal_A = simulate_sys(activity.power, [activity.distance[0], activity.speed[0], w_prime], activity.distance, activity.elevation, params)
-# sim_time_personal_A = datetime.timedelta(seconds=round(t_grid_personal_A[-1]))
-# actual_time = datetime.timedelta(seconds=round(activity.time[-1]))
+X_personal_A, t_grid_personal_A = simulate_sys(activity.power, [activity.distance[0], activity.speed[0], w_prime], activity.distance, activity.elevation, params)
+sim_time_personal_A = datetime.timedelta(seconds=round(t_grid_personal_A[-1]))
+actual_time = datetime.timedelta(seconds=round(activity.time[-1]))
 
-# fig, ax = plt.subplots()
-# ax.plot(activity.distance, activity.speed, label="Actual velocity")
-# ax.plot(X_general_A[0], X_general_A[1], label= r'Simulated velocity with $A = 0.4$')
-# ax.set_xlabel("Distance [m]")
-# ax.set_ylabel("Velocity [m/s]")
-# ax.legend()
-# fig.text(0.4, 0.02, f"Simulated time = {str(sim_time_general_A)}, actual time = {str(actual_time)}")
-# plt.show()
+fig, ax = plt.subplots()
+ax.plot(activity.distance, activity.speed, label="Actual velocity")
+ax.plot(X_general_A[0], X_general_A[1], label= r'Simulated velocity with $A = 0.4$')
+ax.set_xlabel("Distance [m]")
+ax.set_ylabel("Velocity [m/s]")
+ax.legend()
+fig.text(0.4, 0.02, f"Simulated time = {str(sim_time_general_A)}, actual time = {str(actual_time)}")
+plt.show()
 
-# fig, ax = plt.subplots()
-# ax.plot(activity.distance, activity.speed, label="Actual velocity")
-# ax.plot(X_personal_A[0], X_personal_A[1], label=r'Simulated velocity with $A_{TT}$')
-# ax.set_xlabel("Distance [m]")
-# ax.set_ylabel("Velocity [m/s]")
-# ax.legend()
-# fig.text(0.4, 0.02, f"Simulated time = {str(sim_time_personal_A)}, actual time = {str(actual_time)}")
-# plt.show()
+fig, ax = plt.subplots()
+ax.plot(activity.distance, activity.speed, label="Actual velocity")
+ax.plot(X_personal_A[0], X_personal_A[1], label=r'Simulated velocity with $A_{TT}$')
+ax.set_xlabel("Distance [m]")
+ax.set_ylabel("Velocity [m/s]")
+ax.legend()
+fig.text(0.4, 0.02, f"Simulated time = {str(sim_time_personal_A)}, actual time = {str(actual_time)}")
+plt.show()
 
 
 # Simulate constant power 
+params['A'] = 0.4
 const_power = 292
 X_const_power, t_grid_const_power = simulate_sys(len(activity.power)*[const_power], [activity.distance[0], activity.speed[0], w_prime], activity.distance, activity.elevation, params)
 finish_time_const_power = datetime.timedelta(seconds=round(t_grid_const_power[-1]))

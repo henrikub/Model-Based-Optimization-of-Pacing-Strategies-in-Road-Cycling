@@ -11,7 +11,7 @@ from scipy.ndimage import gaussian_filter1d
 route_name = "Cobbled Climbs"
 num_laps = 2
 integration_method = "RK4"
-negative_split = False
+negative_split = True
 w_bal_start = 90/100*25000
 w_bal_end = 0
 
@@ -113,59 +113,59 @@ opt_details = {
 opt_plt.plot_optimization_results(sol_rk4, U_rk4, X_rk4, T_rk4, distance, elevation, params, opt_details, False)
 
 # Compare with negative split pacing
-# optimization_opts['negative_split'] = True
-# sol_ns, opti_ns, T_ns, U_ns, X_ns = opt.solve_opt(distance, elevation, params, optimization_opts, initialization)
+optimization_opts['negative_split'] = True
+sol_ns, opti_ns, T_ns, U_ns, X_ns = opt.solve_opt(distance, elevation, params, optimization_opts, initialization)
 
-# plt.plot(activity.distance, smoothed_power, label='Intuitive pacing power output')
-# plt.plot(sol_rk4.value(X_rk4[0,:]), sol_rk4.value(U_rk4), label='Optimized power output')
-# plt.plot(sol_ns.value(X_ns[0,:]), sol_ns.value(U_ns), label='Optimized negative split power output')
-# plt.legend()
-# plt.xlabel('Distance [m]')
-# plt.ylabel('Power [W]')
-# plt.show()
+plt.plot(activity.distance, smoothed_power, label='Intuitive pacing power output')
+plt.plot(sol_rk4.value(X_rk4[0,:]), sol_rk4.value(U_rk4), label='Optimized power output')
+plt.plot(sol_ns.value(X_ns[0,:]), sol_ns.value(U_ns), label='Optimized negative split power output')
+plt.legend()
+plt.xlabel('Distance [m]')
+plt.ylabel('Power [W]')
+plt.show()
 
-# optimization_opts["integration_method"] = "Euler"
-# sol_e, opti_e, T_e, U_e, X_e = opt.solve_opt(distance, elevation, params, optimization_opts, initialization)
-# stats = sol_e.stats()
-# opt_details = {
-#     "N": N,
-#     "w_bal_model": optimization_opts.get("w_bal_model"),
-#     "integration_method": optimization_opts.get("integration_method"),
-#     "time_init_guess": optimization_opts.get("time_initial_guess"),
-#     "iterations": stats['iter_count'],
-#     "opt_time": stats['t_wall_total']
-# }
-# # opt_plt.plot_optimization_results(sol_e, U_e, X_e, T_e, distance, elevation, params, opt_details, False)
+optimization_opts["integration_method"] = "Euler"
+sol_e, opti_e, T_e, U_e, X_e = opt.solve_opt(distance, elevation, params, optimization_opts, initialization)
+stats = sol_e.stats()
+opt_details = {
+    "N": N,
+    "w_bal_model": optimization_opts.get("w_bal_model"),
+    "integration_method": optimization_opts.get("integration_method"),
+    "time_init_guess": optimization_opts.get("time_initial_guess"),
+    "iterations": stats['iter_count'],
+    "opt_time": stats['t_wall_total']
+}
+opt_plt.plot_optimization_results(sol_e, U_e, X_e, T_e, distance, elevation, params, opt_details, False)
 
-# optimization_opts["integration_method"] = "Midpoint"
-# sol_m, opti_m, T_m, U_m, X_m = opt.solve_opt(distance, elevation, params, optimization_opts, initialization)
-# stats = sol_m.stats()
-# opt_details = {
-#     "N": N,
-#     "w_bal_model": optimization_opts.get("w_bal_model"),
-#     "integration_method": optimization_opts.get("integration_method"),
-#     "time_init_guess": optimization_opts.get("time_initial_guess"),
-#     "iterations": stats['iter_count'],
-#     "opt_time": stats['t_wall_total']
-# }
-# # opt_plt.plot_optimization_results(sol_m, U_m, X_m, T_m, distance, elevation, params, opt_details, False)
+optimization_opts["integration_method"] = "Midpoint"
+sol_m, opti_m, T_m, U_m, X_m = opt.solve_opt(distance, elevation, params, optimization_opts, initialization)
+stats = sol_m.stats()
+opt_details = {
+    "N": N,
+    "w_bal_model": optimization_opts.get("w_bal_model"),
+    "integration_method": optimization_opts.get("integration_method"),
+    "time_init_guess": optimization_opts.get("time_initial_guess"),
+    "iterations": stats['iter_count'],
+    "opt_time": stats['t_wall_total']
+}
+opt_plt.plot_optimization_results(sol_m, U_m, X_m, T_m, distance, elevation, params, opt_details, False)
 
 
-# plt.plot(sol_rk4.value(X_rk4[0,:]), sol_rk4.value(U_rk4))
-# plt.plot(sol_e.value(X_e[0,:]), sol_e.value(U_e))
-# plt.plot(sol_m.value(X_m[0,:]), sol_m.value(U_m))
-# plt.xlabel("Distance [m]")
-# plt.ylabel("Power [W]")
-# plt.legend(["RK4", "Euler", "Midpoint"])
-# plt.show()
+plt.plot(sol_rk4.value(X_rk4[0,:]), sol_rk4.value(U_rk4))
+plt.plot(sol_e.value(X_e[0,:]), sol_e.value(U_e))
+plt.plot(sol_m.value(X_m[0,:]), sol_m.value(U_m))
+plt.xlabel("Distance [m]")
+plt.ylabel("Power [W]")
+plt.legend(["RK4", "Euler", "Midpoint"])
+plt.show()
 
-# time = np.linspace(0,sol_rk4.value(T_rk4), N+1)
-# w_bal_ode = w_prime_balance_ode(sol_rk4.value(U_rk4), time, cp, w_prime)
-# plt.plot(time, w_bal_ode)
-# plt.plot(time, sol_rk4.value(X_rk4[2,:]))
-# plt.legend(["Actual W'balance", "Integrated W'balance"])
-# plt.xlabel("Time [s]")
-# plt.ylabel("W'balance [J]")
-# plt.show()
+time = np.linspace(0,sol_rk4.value(T_rk4), N+1)
+w_bal_ode = w_prime_balance_ode(sol_rk4.value(U_rk4), time, cp, w_prime)
+plt.plot(time, w_bal_ode)
+plt.plot(time, sol_rk4.value(X_rk4[2,:]))
+plt.legend(["Actual W'balance", "Integrated W'balance"])
+plt.xlabel("Time [s]")
+plt.ylabel("W'balance [J]")
+plt.show()
 
-# print(np.max( np.abs(np.array(w_bal_ode) - np.array(sol_rk4.value(X_rk4[2,:])) )))
+print(np.max( np.abs(np.array(w_bal_ode) - np.array(sol_rk4.value(X_rk4[2,:])) )))

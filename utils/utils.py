@@ -92,13 +92,3 @@ def normalized_power(power):
     ma_r = np.power(ma, 4)
     avg = np.mean(ma_r)
     return np.power(avg, 1/4)
-
-
-def moving_avg_casadi(x, window_size):
-    return ca.sum1(ca.mtimes(ca.DM.ones(window_size, 1), x)) / window_size
-
-def normalized_power_casadi(power):
-    ma = moving_avg_casadi(power, 30)
-    ma_r = ca.power(ma, 4)
-    avg = ca.sum1(ma_r) / ma_r.size1()
-    return ca.power(avg, 1/4)
