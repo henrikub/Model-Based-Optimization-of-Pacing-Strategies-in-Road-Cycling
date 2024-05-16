@@ -11,7 +11,7 @@ from scipy.ndimage import gaussian_filter1d
 route_name = "Cobbled Climbs"
 num_laps = 2
 integration_method = "RK4"
-negative_split = True
+negative_split = False
 w_bal_start = 90/100*25000
 w_bal_end = 0
 
@@ -108,7 +108,10 @@ opt_details = {
     "integration_method": optimization_opts.get("integration_method"),
     "time_init_guess": optimization_opts.get("time_initial_guess"),
     "iterations": stats['iter_count'],
-    "opt_time": stats['t_wall_total']
+    "opt_time": stats['t_wall_total'],
+    "negative_split": optimization_opts.get("negative_split"),
+    "w_bal_start": optimization_opts.get("w_bal_start"),
+    "w_bal_end": optimization_opts.get("w_bal_end")
 }
 opt_plt.plot_optimization_results(sol_rk4, U_rk4, X_rk4, T_rk4, distance, elevation, params, opt_details, False)
 
