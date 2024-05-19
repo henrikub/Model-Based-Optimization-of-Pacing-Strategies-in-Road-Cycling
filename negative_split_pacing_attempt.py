@@ -7,6 +7,7 @@ import casadi as ca
 from w_bal.w_bal import *
 from simulator.simulator import simulate_sys
 import json
+from scipy.interpolate import CubicSpline
 import datetime 
 
 route_name = 'Cobbled Climbs'
@@ -123,3 +124,11 @@ ax[0].patch.set_visible(False)
 ax[1].patch.set_visible(False)
 ax[2].patch.set_visible(False)
 plt.show()
+
+# Calculate RMSE
+interpolator = CubicSpline(opt_result["distance"], opt_result["power"])
+opt_power_interp = interpolator(activity.distance)
+
+mse = np.mean(opt_power_interp - activity.power)**2
+rmse = np.sqrt(mse)
+print("RMSE is ", round(rmse,2))
