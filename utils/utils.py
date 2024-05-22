@@ -35,6 +35,21 @@ def w_prime_balance_ode(power, time, cp, w_prime):
         last = new
     return w_prime_balance
 
+def w_prime_balance_ode_notstart(power, time, cp, w_prime, w_bal):
+    last = w_bal
+    w_prime_balance = []
+    w_prime_balance.append(last)
+    for i in range(len(power)-1):
+        delta_t = time[i+1] - time[i]
+        if power[i] < cp:
+            new = w_prime - (w_prime - last) * np.power(np.e, -(cp - power[i])*delta_t/w_prime)
+        else:
+            new = last - (power[i] - cp)*delta_t
+
+        w_prime_balance.append(new)
+        last = new
+    return w_prime_balance
+
 def remove_every_other_value(arr):
     return arr[:1] + arr[1:-1:2] + arr[-1:]
 

@@ -22,8 +22,8 @@ with open('opt_results_json/optimal_pacing_attempt.json', 'r') as f:
 
 activity = ActivityReader("cobbled_climbs_optimal_pacing.tcx")
 
-activity.remove_period_after(18748)
-activity.remove_period_before(routes_dict[route_name]['lead_in'])
+activity.remove_period_after(18730)
+activity.remove_period_before(380)
 activity.time = np.array(activity.time) - activity.time[0]
 activity.distance = np.array(activity.distance) - activity.distance[0]
 opt_result['distance'] = np.array(opt_result['distance']) - opt_result['distance'][0]
