@@ -17,16 +17,17 @@ with open('routes.json', 'r') as file:
     routes_dict = json.load(file)
 
 opt_result = {}
-with open('opt_results_json/optimal_pacing_attempt.json', 'r') as f:
+# with open('opt_results_json/optimal_pacing_attempt.json', 'r') as f:
+#     opt_result = json.load(f)
+with open('opt_results_json/optimal_power.json', 'r') as f:
     opt_result = json.load(f)
 
 activity = ActivityReader("cobbled_climbs_optimal_pacing.tcx")
 
-activity.remove_period_after(18748)
-activity.remove_period_before(routes_dict[route_name]['lead_in'])
+activity.remove_period_after(18750)
+activity.remove_period_before(380)
 activity.time = np.array(activity.time) - activity.time[0]
 activity.distance = np.array(activity.distance) - activity.distance[0]
-opt_result['distance'] = np.array(opt_result['distance']) - opt_result['distance'][0]
 smoothed_power = gaussian_filter1d(activity.power,4)
 
 height = 1.8
@@ -185,9 +186,18 @@ ax[2].patch.set_visible(False)
 plt.show()
 
 # Calculate RMSE
-interpolator = CubicSpline(opt_result["distance"], opt_result["power"])
-opt_power_interp = interpolator(activity.distance)
+interpolator_power = CubicSpline(opt_result["distance"], opt_result["power"])
+opt_power_interp = interpolator_power(activity.distance)
 
 mse = np.mean(opt_power_interp - activity.power)**2
 rmse = np.sqrt(mse)
 print("RMSE is ", round(rmse,2))
+
+
+# Plot difference in velocity and time
+#interpolator_velocity = CubicSpline(opt_result["velocity"])
+plt.plot(activity.distance, activity.speed)
+plt.plot(opt_result["distance"], opt_result["velocity"])
+plt.legend(["Recorded velocity", "Optimal velocity"])
+plt.plot()
+plt.show()

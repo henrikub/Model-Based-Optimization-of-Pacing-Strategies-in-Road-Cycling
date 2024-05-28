@@ -34,21 +34,21 @@ w_prime = 25000
 max_power = 933
 alpha = (max_power-cp)/w_prime
 
-# w_bal_hn = w_prime_balance_ode(activity.power, 286, 26900)
-# w_bal_i = w_prime_balance_ode(activity.power, 274, 35000)
-# w_bal_gc = w_prime_balance_ode(activity.power, 288, 23600)
-# w_bal_r = w_prime_balance_ode(activity.power, 269, 39200)
-# w_bal_final = w_prime_balance_ode(activity.power, 290, 25000)
+w_bal_hn = w_prime_balance_ode(activity.power, 286, 26900)
+w_bal_i = w_prime_balance_ode(activity.power, 274, 35000)
+w_bal_gc = w_prime_balance_ode(activity.power, 288, 23600)
+w_bal_r = w_prime_balance_ode(activity.power, 269, 39200)
+w_bal_final = w_prime_balance_ode(activity.power, 290, 25000)
 
-# plt.plot(activity.distance, w_bal_hn)
-# plt.plot(activity.distance, w_bal_i)
-# plt.plot(activity.distance, w_bal_gc)
-# plt.plot(activity.distance, w_bal_r)
-# plt.plot(activity.distance, w_bal_final)
-# plt.legend(["HighNorth", "Intervals.icu", "GoldenCheetah", "Regression", "CP = 290, W' = 25kJ"])
-# plt.xlabel("Distance [m]")
-# plt.ylabel("W'balance [J]")
-# plt.show()
+plt.plot(activity.distance, w_bal_hn)
+plt.plot(activity.distance, w_bal_i)
+plt.plot(activity.distance, w_bal_gc)
+plt.plot(activity.distance, w_bal_r)
+plt.plot(activity.distance, w_bal_final)
+plt.legend(["HighNorth", "Intervals.icu", "GoldenCheetah", "Regression", "CP = 290, W' = 25kJ"])
+plt.xlabel("Distance [m]")
+plt.ylabel("W'balance [J]")
+plt.show()
 
 
 distance = routes_dict[route_name]['distance']
