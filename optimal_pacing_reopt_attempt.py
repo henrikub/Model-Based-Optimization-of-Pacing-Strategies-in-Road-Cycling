@@ -7,7 +7,7 @@ import casadi as ca
 from w_bal.w_bal import *
 from simulator.simulator import simulate_sys
 import json
-from scipy.interpolate import CubicSpline
+from scipy.interpolate import interp1d
 import datetime 
 
 route_name = 'Cobbled Climbs'
@@ -80,9 +80,17 @@ params = {
 
 
 # Calculate RMSE
-interpolator = CubicSpline(opt_result["distance"], opt_result["power"])
-opt_power_interp = interpolator(activity.distance)
+# interpolator = CubicSpline(opt_result["distance"], opt_result["power"])
+# opt_power_interp = interpolator(activity.distance)
 
+# mse = np.mean(opt_power_interp - activity.power)**2
+# rmse = np.sqrt(mse)
+# print("RMSE is ", round(rmse,2))
+
+# Calculate RMSE
+interpolator_power = interp1d(opt_result["distance"], opt_result["power"])
+opt_power_interp = interpolator_power(activity.distance[1:])
+opt_power_interp = np.insert(opt_power_interp,0,0)
 mse = np.mean(opt_power_interp - activity.power)**2
 rmse = np.sqrt(mse)
 print("RMSE is ", round(rmse,2))
@@ -126,9 +134,17 @@ plt.legend(["Reoptimized power", "Smoothed power"])
 plt.show()
 
 # Calculate RMSE
-interpolator = CubicSpline(reoptimized_distance, reoptimized_power)
-opt_power_interp = interpolator(activity.distance)
+# interpolator = CubicSpline(reoptimized_distance, reoptimized_power)
+# opt_power_interp = interpolator(activity.distance)
 
+# mse = np.mean(opt_power_interp - activity.power)**2
+# rmse = np.sqrt(mse)
+# print("RMSE is ", round(rmse,2))
+
+# Calculate RMSE
+interpolator_power = interp1d(reoptimized_distance, reoptimized_power)
+opt_power_interp = interpolator_power(activity.distance[1:])
+opt_power_interp = np.insert(opt_power_interp,0,0)
 mse = np.mean(opt_power_interp - activity.power)**2
 rmse = np.sqrt(mse)
 print("RMSE is ", round(rmse,2))
@@ -163,7 +179,7 @@ ax1_twin.legend(["Elevation Profile"], loc='lower left')
 
 ax[2].plot(activity.distance, activity.heart_rate, zorder=2)
 ax[2].set_ylabel("Heart Rate [bpm]")
-ax[2].legend(["Heart Rate"], loc='upper right')
+ax[2].legend(["Heart Rate"], loc='lower right')
 ax2_twin = ax[2].twinx()
 ax2_twin.plot(activity.distance, activity.elevation, color='red')
 ax2_twin.set_ylabel('Elevation [m]', color='tab:red')

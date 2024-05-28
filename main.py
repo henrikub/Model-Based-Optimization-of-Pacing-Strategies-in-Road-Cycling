@@ -12,7 +12,7 @@ import casadi as ca
 route_name = "Cobbled Climbs"
 num_laps = 2
 integration_method = "RK4"
-negative_split = False
+negative_split = True
 w_bal_start = 90/100*25000
 w_bal_end = 0
 

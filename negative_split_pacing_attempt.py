@@ -7,7 +7,7 @@ import casadi as ca
 from w_bal.w_bal import *
 from simulator.simulator import simulate_sys
 import json
-from scipy.interpolate import CubicSpline
+from scipy.interpolate import interp1d
 import datetime 
 
 route_name = 'Cobbled Climbs'
@@ -23,7 +23,7 @@ with open('opt_results_json/negative_split_pacing.json', 'r') as f:
 activity = ActivityReader("cobbled_climbs_negative_split_pacing.tcx")
 
 activity.remove_period_after(18654)
-activity.remove_period_before(284)
+activity.remove_period_before(285)
 activity.time = np.array(activity.time) - activity.time[0]
 activity.distance = np.array(activity.distance) - activity.distance[0]
 smoothed_power = gaussian_filter1d(activity.power,4)
@@ -109,7 +109,7 @@ ax1_twin.legend(["Elevation Profile"], loc='lower left')
 
 ax[2].plot(activity.distance, activity.heart_rate, zorder=2)
 ax[2].set_ylabel("Heart Rate [bpm]")
-ax[2].legend(["Heart Rate"], loc='upper right')
+ax[2].legend(["Heart Rate"], loc='lower right')
 ax2_twin = ax[2].twinx()
 ax2_twin.plot(activity.distance, activity.elevation, color='red')
 ax2_twin.set_ylabel('Elevation [m]', color='tab:red')
@@ -125,10 +125,47 @@ ax[1].patch.set_visible(False)
 ax[2].patch.set_visible(False)
 plt.show()
 
-# Calculate RMSE
-interpolator = CubicSpline(opt_result["distance"], opt_result["power"])
-opt_power_interp = interpolator(activity.distance)
 
-mse = np.mean(opt_power_interp - activity.power)**2
+# Calculate RMSE
+interpolator_power = interp1d(opt_result["distance"], opt_result["power"])
+opt_power_interp = interpolator_power(activity.distance[2:-1])
+
+opt_power_interp = np.insert(opt_power_interp,0,0)
+mse = np.mean(opt_power_interp - activity.power[1:-1])**2
 rmse = np.sqrt(mse)
 print("RMSE is ", round(rmse,2))
+
+
+# Plot difference in velocity and time
+interpolator_time = interp1d(opt_result["distance"], opt_result["time"], kind='linear')
+opt_time_interp = interpolator_time(activity.distance[2:-1])
+opt_time_interp = np.insert(opt_time_interp,0,0)
+opt_time_interp = np.insert(opt_time_interp,0,0)
+time_difference = [activity.time[i] - opt_time_interp[i] for i in range(len(activity.time)-1)]
+
+fig, ax = plt.subplots(2,1)
+ax[0].plot(activity.distance, activity.speed)
+ax[0].plot(opt_result["distance"], opt_result["velocity"])
+ax[0].legend(["Recorded velocity", "Optimal velocity"], loc='upper right')
+ax[0].set_ylabel("Velocity [m/s]")
+ax0_twin = ax[0].twinx()
+ax0_twin.plot(activity.distance, activity.elevation, color='red')
+ax0_twin.set_ylabel('Elevation [m]', color='tab:red')
+ax0_twin.tick_params(axis='y', labelcolor='tab:red')
+ax0_twin.legend(["Elevation Profile"], loc='lower left')
+
+ax[1].plot(activity.distance[:-1], time_difference)
+ax[1].legend(["Time difference"], loc='lower right')
+ax[1].set_ylabel("Time [s]")
+ax[1].set_xlabel("Distance [m]")
+ax1_twin = ax[1].twinx()
+ax1_twin.plot(activity.distance, activity.elevation, color='red')
+ax1_twin.set_ylabel('Elevation [m]', color='tab:red')
+ax1_twin.tick_params(axis='y', labelcolor='tab:red')
+ax1_twin.legend(["Elevation Profile"], loc='upper left')
+
+ax[0].set_zorder(ax0_twin.get_zorder()+1)
+ax[1].set_zorder(ax0_twin.get_zorder()+1)
+ax[0].patch.set_visible(False)
+ax[1].patch.set_visible(False)
+plt.show()
