@@ -1,7 +1,7 @@
 from tcxreader.tcxreader import TCXReader
 
 class ActivityReader():
-    def __init__(self, filename):
+    def __init__(self, filename, garmin=True):
         """Initializes an instance of the class and reads the data from the TCX file.
         The arrays for distance, time, elevation, latitude, longitude, heart rate, cadence, power and speed
         are stored as class variables. 
@@ -20,9 +20,9 @@ class ActivityReader():
         self.cadence = []
         self.power = []
         self.speed = []
-        self.get_activity_data()
+        self.get_activity_data(garmin)
 
-    def get_activity_data(self):
+    def get_activity_data(self, garmin):
         """Extracts the relevant data from the TCXTrackpoints objects an store them as arrays."""
         self.distance = [point.distance for point in self.points]
         datetime = [point.time for point in self.points]
@@ -33,7 +33,8 @@ class ActivityReader():
         self.heart_rate = [point.hr_value for point in self.points]
         self.cadence = [point.cadence for point in self.points]
         self.power = [point.tpx_ext['Watts'] for point in self.points]
-        self.speed = [point.tpx_ext['Speed'] for point in self.points]
+        if garmin:
+            self.speed = [point.tpx_ext['Speed'] for point in self.points]
 
     def find_last_active_datapoint(self, approx_time):
         """Finds last data point after a certain amount of time where the power is above 100W. """

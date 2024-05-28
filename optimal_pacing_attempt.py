@@ -24,7 +24,7 @@ with open('opt_results_json/optimal_power.json', 'r') as f:
 
 activity = ActivityReader("cobbled_climbs_optimal_pacing.tcx")
 
-activity.remove_period_after(18750)
+activity.remove_period_after(18730)
 activity.remove_period_before(380)
 activity.time = np.array(activity.time) - activity.time[0]
 activity.distance = np.array(activity.distance) - activity.distance[0]

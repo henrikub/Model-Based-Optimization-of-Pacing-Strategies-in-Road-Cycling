@@ -17,13 +17,13 @@ with open('routes.json', 'r') as file:
     routes_dict = json.load(file)
 
 opt_result = {}
-with open('opt_results_json/negative_split_pacing.json', 'r') as f:
+with open('opt_results_json/optimal_pacing_reopt.json', 'r') as f:
     opt_result = json.load(f)
 
-activity = ActivityReader("cobbled_climbs_negative_split_pacing.tcx")
+activity = ActivityReader("cobbled_climbs_optimal_pacing_with_reopt.tcx")
 
-activity.remove_period_after(18654)
-activity.remove_period_before(284)
+activity.remove_period_after(18607)
+activity.remove_period_before(240)
 activity.time = np.array(activity.time) - activity.time[0]
 activity.distance = np.array(activity.distance) - activity.distance[0]
 smoothed_power = gaussian_filter1d(activity.power,4)
@@ -79,17 +79,71 @@ params = {
 }
 
 
+# Calculate RMSE
+interpolator = CubicSpline(opt_result["distance"], opt_result["power"])
+opt_power_interp = interpolator(activity.distance)
+
+mse = np.mean(opt_power_interp - activity.power)**2
+rmse = np.sqrt(mse)
+print("RMSE is ", round(rmse,2))
+
+
+# Plot the reoptimizations
+reoptimizations = []
+for i in range(1,8):
+    path = 'reoptimizations/reopt' + str(i) + '.json'
+    with open(path, 'r') as f:
+        reoptimizations.append(json.load(f))
+
+end_index = np.argwhere(np.array(opt_result["distance"]) >= reoptimizations[0]["distance"][0])[0][0]
+reoptimized_power = opt_result["power"][0:end_index]
+reoptimized_distance = opt_result["distance"][0:end_index]
+reoptimized_wbal = opt_result["w_bal"][0:end_index]
+
+# reoptimized_power = []
+# reoptimized_distance = []
+
+legend = ["Optimal Power"]
+plt.plot(opt_result["distance"], opt_result["power"], linestyle='--')
+for i in range(len(reoptimizations)):
+    label = 'R' + str(i+1)
+    if i != len(reoptimizations)-1:
+        end_index = np.argwhere(np.array(reoptimizations[i]["distance"]) >= reoptimizations[i+1]["distance"][0])[0][0]
+    legend.append(label)
+    reoptimized_power += reoptimizations[i]["power"][:end_index]
+    reoptimized_distance += reoptimizations[i]["distance"][:end_index]
+    reoptimized_wbal += reoptimizations[i]["w_bal"][:end_index]    
+    plt.plot(reoptimizations[i]["distance"][:end_index], reoptimizations[i]["power"][:end_index], label=label)
+
+plt.legend(legend)
+plt.xlabel("Distance [m]")
+plt.ylabel("Power [w]")
+plt.show()
+
+plt.plot(reoptimized_distance, reoptimized_power)
+plt.plot(activity.distance, smoothed_power)
+plt.legend(["Reoptimized power", "Smoothed power"])
+plt.show()
+
+# Calculate RMSE
+interpolator = CubicSpline(reoptimized_distance, reoptimized_power)
+opt_power_interp = interpolator(activity.distance)
+
+mse = np.mean(opt_power_interp - activity.power)**2
+rmse = np.sqrt(mse)
+print("RMSE is ", round(rmse,2))
+
 
 # Plot the optimal pacing attempt
 w_bal_ode = w_prime_balance_ode(activity.power, cp, w_prime)
 max_power_constraint = alpha*np.array(w_bal_ode) + cp
 fig, ax = plt.subplots(3,1)
-ax[0].set_title("Negative Split Optimal Pacing Attempt")
+ax[0].set_title("Optimal Pacing with Reoptimization Attempt")
 ax[0].plot(activity.distance, max_power_constraint, zorder=3)
-ax[0].plot(opt_result['distance'], opt_result['power'], zorder=2)
+ax[0].plot(reoptimized_distance, reoptimized_power, zorder=2)
 ax[0].plot(activity.distance, smoothed_power, zorder=4)
 ax[0].plot(activity.distance, len(activity.distance)*[cp], color='gray', linestyle='dashed', zorder=1)
-ax[0].legend(["Maximum attainable power", "Optimal power", "Smoothed power", "CP"], loc='upper right')
+ax[0].legend(["Maximum attainable power", "Reoptimized power", "Smoothed power", "CP"], loc='upper right')
 ax[0].set_ylabel("Power [W]")
 ax0_twin = ax[0].twinx()
 ax0_twin.plot(activity.distance, activity.elevation, color='red')
@@ -98,9 +152,9 @@ ax0_twin.tick_params(axis='y', labelcolor='tab:red')
 ax0_twin.legend(["Elevation Profile"], loc='lower left')
 
 ax[1].plot(activity.distance, w_bal_ode, zorder=2)
-ax[1].plot(opt_result['distance'], opt_result['w_bal'])
+ax[1].plot(reoptimized_distance, reoptimized_wbal)
 ax[1].set_ylabel("W'balance [J]")
-ax[1].legend(["W'balance", "Optimal W'balance"], loc='upper right')
+ax[1].legend(["W'balance", "Reoptimized W'balance"], loc='upper right')
 ax1_twin = ax[1].twinx()
 ax1_twin.plot(activity.distance, activity.elevation, color='red')
 ax1_twin.set_ylabel('Elevation [m]', color='tab:red')
@@ -125,10 +179,3 @@ ax[1].patch.set_visible(False)
 ax[2].patch.set_visible(False)
 plt.show()
 
-# Calculate RMSE
-interpolator = CubicSpline(opt_result["distance"], opt_result["power"])
-opt_power_interp = interpolator(activity.distance)
-
-mse = np.mean(opt_power_interp - activity.power)**2
-rmse = np.sqrt(mse)
-print("RMSE is ", round(rmse,2))
