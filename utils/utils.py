@@ -2,12 +2,6 @@ import numpy as np
 import casadi as ca
 import json
 
-def sigmoid(x, x0, a):
-    return 1/(1 + np.power(np.e, (-(x-x0)/a)))
-
-def casadi_sigmoid(x, x0, a):
-    return 1/(1 + ca.exp(-(x-x0)/a))
-
 def calculate_gradient(distance, elevation):
     gradient = []
     for i in range(len(distance)-1):
@@ -53,11 +47,22 @@ def w_prime_balance_ode_notstart(power, time, cp, w_prime, w_bal):
 def remove_every_other_value(arr):
     return arr[:1] + arr[1:-1:2] + arr[-1:]
 
-def simplify_track(distance, elevation, factor):
-    for _ in range(factor):
-        distance = remove_every_other_value(distance)
-        elevation = remove_every_other_value(elevation)
-    return distance, elevation
+def w_prime_balance_ode(power, cp, w_prime):
+
+    last = w_prime
+    w_prime_balance = []
+
+    for p in power:
+        if p < cp:
+            new = w_prime - (w_prime - last) * np.power(np.e, -(cp - p)/w_prime)
+        else:
+            new = last - (p - cp)
+
+        w_prime_balance.append(new)
+        last = new
+
+    return w_prime_balance
+
 
 def w_prime_balance_simple(power, time, cp, w_prime):
     last = w_prime
