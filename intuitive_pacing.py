@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter1d
 import utils.utils as utils
 import casadi as ca
-from w_bal.w_bal import *
 from simulator.simulator import simulate_sys
 import json
 import datetime 
@@ -34,11 +33,11 @@ w_prime = 25000
 max_power = 933
 alpha = (max_power-cp)/w_prime
 
-w_bal_hn = w_prime_balance_ode(activity.power, 286, 26900)
-w_bal_i = w_prime_balance_ode(activity.power, 274, 35000)
-w_bal_gc = w_prime_balance_ode(activity.power, 288, 23600)
-w_bal_r = w_prime_balance_ode(activity.power, 269, 39200)
-w_bal_final = w_prime_balance_ode(activity.power, 290, 25000)
+w_bal_hn = utils.w_prime_balance_ode(activity.power, 286, 26900)
+w_bal_i = utils.w_prime_balance_ode(activity.power, 274, 35000)
+w_bal_gc = utils.w_prime_balance_ode(activity.power, 288, 23600)
+w_bal_r = utils.w_prime_balance_ode(activity.power, 269, 39200)
+w_bal_final = utils.w_prime_balance_ode(activity.power, 290, 25000)
 
 plt.plot(activity.distance, w_bal_hn)
 plt.plot(activity.distance, w_bal_i)
@@ -152,7 +151,7 @@ fig.text(0.4, 0.01, f"Finish time for P = {max_const_power}W is {str(finish_time
 plt.show()
 
 # Plot the intuitive pacing attempt
-w_bal_ode = w_prime_balance_ode(activity.power, cp, w_prime)
+w_bal_ode = utils.w_prime_balance_ode(activity.power, cp, w_prime)
 max_power_constraint = alpha*np.array(w_bal_ode) + cp
 fig, ax = plt.subplots(3,1)
 ax[0].set_title("Intuitive pacing attempt")
@@ -178,7 +177,7 @@ ax1_twin.legend(["Elevation Profile"], loc='lower left')
 
 ax[2].plot(activity.distance, activity.heart_rate, zorder=2)
 ax[2].set_ylabel("Heart Rate [bpm]")
-ax[2].legend(["Heart Rate"], loc='upper right')
+ax[2].legend(["Heart Rate"], loc='lower right')
 ax2_twin = ax[2].twinx()
 ax2_twin.plot(activity.distance, activity.elevation, color='red')
 ax2_twin.set_ylabel('Elevation [m]', color='tab:red')
