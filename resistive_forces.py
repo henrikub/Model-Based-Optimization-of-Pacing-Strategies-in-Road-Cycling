@@ -1,9 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-
 # Parameters
-mass_rider = 78
+mass_rider = 75
 mass_bike = 8
 m = mass_rider + mass_bike
 g = 9.81
@@ -15,7 +14,7 @@ r = 0.33
 Cd = 0.7
 rho = 1.2
 A = 0.4
-eta = 1
+eta = 0.975
 
 def forces_pot(s):
     vec = []
@@ -47,8 +46,6 @@ potential_forces_decline = np.array(forces_pot(-0.05))
 rolling_forces = np.array(forces_roll())
 bearing_forces = np.array(forces_bearing())
 drag_forces = np.array(forces_drag())
-
-print(potential_forces_incline+rolling_forces)
 
 N = 8
 index = np.arange(N)

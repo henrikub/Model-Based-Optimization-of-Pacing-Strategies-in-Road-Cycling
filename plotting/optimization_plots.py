@@ -6,20 +6,12 @@ import numpy as np
 def plot_optimization_results(sol, U, X, T, distance, elevation, params, opt_details, streamlit=False, baseline_activity = None, baseline_power = None):
     cp = params.get("cp")
     alpha = params.get("alpha")
-    # alpha_c = params.get("alpha_c")
-    # c_max = params.get("c_max")
-    # c = params.get("c")
-
     optimal_power = sol.value(U)
     optimal_time = sol.value(T)
     pos = sol.value(X[0,:])
     velocity = sol.value(X[1,:])
     w_bal = sol.value(X[2,:])
 
-    # stats = sol.stats()
-    # opt_time = stats['t_wall_total']
-
-    # max_power = 4*(alpha*w_bal + cp)*(c/(alpha_c*w_bal + c_max)*(1-c/(alpha_c*w_bal + c_max)))
     max_power = alpha*w_bal + cp
     fig, ax = plt.subplots(3,1, figsize=(15,10))
 
@@ -76,9 +68,4 @@ def plot_optimization_results(sol, U, X, T, distance, elevation, params, opt_det
     ax[1].patch.set_visible(False)
     ax[2].patch.set_visible(False)
 
-    #fig.text(0.5, 0.04, f"Integration method: {opt_details.get('integration_method')}, points = {len(distance)}, N = {opt_details.get('N')}, W'balance model: {opt_details.get('w_bal_model')}, iterations: {opt_details.get('iterations')}, time: {str(datetime.timedelta(seconds=round(opt_details.get('opt_time'))))}", horizontalalignment="center")
-    fig.text(0.4, 0.02, f"Avg power: {round(np.mean(sol.value(U)))}W, Normalized Power: {round(normalized_power(sol.value(U)))}W")
-    if streamlit:
-        return fig
-    else:
-        plt.show()
+    plt.show()

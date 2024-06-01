@@ -33,11 +33,11 @@ w_prime = 25000
 max_power = 933
 alpha = (max_power-cp)/w_prime
 
-w_bal_hn = utils.w_prime_balance_ode(activity.power, 286, 26900)
-w_bal_i = utils.w_prime_balance_ode(activity.power, 274, 35000)
-w_bal_gc = utils.w_prime_balance_ode(activity.power, 288, 23600)
-w_bal_r = utils.w_prime_balance_ode(activity.power, 269, 39200)
-w_bal_final = utils.w_prime_balance_ode(activity.power, 290, 25000)
+w_bal_hn = utils.w_prime_balance_ode(activity.power, activity.time, 286, 26900)
+w_bal_i = utils.w_prime_balance_ode(activity.power, activity.time, 274, 35000)
+w_bal_gc = utils.w_prime_balance_ode(activity.power, activity.time, 288, 23600)
+w_bal_r = utils.w_prime_balance_ode(activity.power, activity.time, 269, 39200)
+w_bal_final = utils.w_prime_balance_ode(activity.power, activity.time, 290, 25000)
 
 plt.plot(activity.distance, w_bal_hn)
 plt.plot(activity.distance, w_bal_i)
@@ -83,16 +83,13 @@ params = {
     'r': 0.33,
     'Cd': 0.7,
     'rho': 1.2,
-    # 'A': 0.0293*1.8**(0.725)*78**(0.441) + 0.0604,
     'A': 0.4,
     'eta': 1,
     'w_prime': w_prime,
     'cp': cp,
     'alpha': alpha
-    # 'alpha_c': 0.01,
-    # 'c_max': 150,
-    # 'c': 80
 }
+
 X_general_A, t_grid_general_A = simulate_sys(activity.power, [activity.distance[0], activity.speed[0], w_prime], activity.distance, activity.elevation, params)
 params['A'] = 0.0293*height**(0.725)*mass**(0.441) + 0.0604
 print(params['A'])
@@ -151,7 +148,7 @@ fig.text(0.4, 0.01, f"Finish time for P = {max_const_power}W is {str(finish_time
 plt.show()
 
 # Plot the intuitive pacing attempt
-w_bal_ode = utils.w_prime_balance_ode(activity.power, cp, w_prime)
+w_bal_ode = utils.w_prime_balance_ode(activity.power, activity.time, cp, w_prime)
 max_power_constraint = alpha*np.array(w_bal_ode) + cp
 fig, ax = plt.subplots(3,1)
 ax[0].set_title("Intuitive pacing attempt")

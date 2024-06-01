@@ -4,11 +4,8 @@ import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter1d
 import utils.utils as utils
 import casadi as ca
-from w_bal.w_bal import *
-from simulator.simulator import simulate_sys
 import json
 from scipy.interpolate import interp1d
-import datetime 
 
 route_name = 'Cobbled Climbs'
 num_laps = 2
@@ -78,15 +75,6 @@ params = {
     'alpha': alpha
 }
 
-
-# Calculate RMSE
-# interpolator = CubicSpline(opt_result["distance"], opt_result["power"])
-# opt_power_interp = interpolator(activity.distance)
-
-# mse = np.mean(opt_power_interp - activity.power)**2
-# rmse = np.sqrt(mse)
-# print("RMSE is ", round(rmse,2))
-
 # Calculate RMSE
 interpolator_power = interp1d(opt_result["distance"], opt_result["power"])
 opt_power_interp = interpolator_power(activity.distance[1:])
@@ -107,9 +95,6 @@ end_index = np.argwhere(np.array(opt_result["distance"]) >= reoptimizations[0]["
 reoptimized_power = opt_result["power"][0:end_index]
 reoptimized_distance = opt_result["distance"][0:end_index]
 reoptimized_wbal = opt_result["w_bal"][0:end_index]
-
-# reoptimized_power = []
-# reoptimized_distance = []
 
 legend = ["Optimal Power"]
 plt.plot(opt_result["distance"], opt_result["power"], linestyle='--')
@@ -134,14 +119,6 @@ plt.legend(["Reoptimized power", "Smoothed power"])
 plt.show()
 
 # Calculate RMSE
-# interpolator = CubicSpline(reoptimized_distance, reoptimized_power)
-# opt_power_interp = interpolator(activity.distance)
-
-# mse = np.mean(opt_power_interp - activity.power)**2
-# rmse = np.sqrt(mse)
-# print("RMSE is ", round(rmse,2))
-
-# Calculate RMSE
 interpolator_power = interp1d(reoptimized_distance, reoptimized_power)
 opt_power_interp = interpolator_power(activity.distance[1:])
 opt_power_interp = np.insert(opt_power_interp,0,0)
@@ -151,7 +128,7 @@ print("RMSE is ", round(rmse,2))
 
 
 # Plot the optimal pacing attempt
-w_bal_ode = w_prime_balance_ode(activity.power, cp, w_prime)
+w_bal_ode = utils.w_prime_balance_ode(activity.power, activity.time, cp, w_prime)
 max_power_constraint = alpha*np.array(w_bal_ode) + cp
 fig, ax = plt.subplots(3,1)
 ax[0].set_title("Optimal Pacing with Reoptimization Attempt")

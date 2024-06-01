@@ -4,11 +4,8 @@ import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter1d
 import utils.utils as utils
 import casadi as ca
-from w_bal.w_bal import *
-from simulator.simulator import simulate_sys
 import json
 from scipy.interpolate import interp1d
-import datetime 
 
 route_name = 'Cobbled Climbs'
 num_laps = 2
@@ -81,7 +78,7 @@ params = {
 
 
 # Plot the optimal pacing attempt
-w_bal_ode = w_prime_balance_ode(activity.power, cp, w_prime)
+w_bal_ode = utils.w_prime_balance_ode(activity.power, activity.time, cp, w_prime)
 max_power_constraint = alpha*np.array(w_bal_ode) + cp
 fig, ax = plt.subplots(3,1)
 ax[0].set_title("Negative Split Optimal Pacing Attempt")

@@ -4,10 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter1d
 import utils.utils as utils
 import casadi as ca
-from w_bal.w_bal import *
-from simulator.simulator import simulate_sys
 import json
-import datetime 
 from scipy.interpolate import interp1d
 
 route_name = 'Cobbled Climbs'
@@ -72,75 +69,15 @@ params = {
     'r': 0.33,
     'Cd': 0.7,
     'rho': 1.2,
-    # 'A': 0.0293*1.8**(0.725)*78**(0.441) + 0.0604,
     'A': 0.4,
     'eta': 1,
     'w_prime': w_prime,
     'cp': cp,
     'alpha': alpha
-    # 'alpha_c': 0.01,
-    # 'c_max': 150,
-    # 'c': 80
 }
 
-# X_general_A, t_grid_general_A = simulate_sys(activity.power, [activity.distance[0], activity.speed[0], w_prime], activity.distance, activity.elevation, params)
-# params['A'] = 0.0293*height**(0.725)*mass**(0.441) + 0.0604
-# print(params['A'])
-# sim_time_general_A = datetime.timedelta(seconds=round(t_grid_general_A[-1]))
-
-# X_personal_A, t_grid_personal_A = simulate_sys(activity.power, [activity.distance[0], activity.speed[0], w_prime], activity.distance, activity.elevation, params)
-# sim_time_personal_A = datetime.timedelta(seconds=round(t_grid_personal_A[-1]))
-# actual_time = datetime.timedelta(seconds=round(activity.time[-1]))
-
-# fig, ax = plt.subplots()
-# ax.plot(activity.distance, activity.speed, label="Actual velocity")
-# ax.plot(X_general_A[0], X_general_A[1], label= r'Simulated velocity with $A = 0.4$')
-# ax.set_xlabel("Distance [m]")
-# ax.set_ylabel("Velocity [m/s]")
-# ax.legend()
-# fig.text(0.4, 0.02, f"Simulated time = {str(sim_time_general_A)}, actual time = {str(actual_time)}")
-# plt.show()
-
-# fig, ax = plt.subplots()
-# ax.plot(activity.distance, activity.speed, label="Actual velocity")
-# ax.plot(X_personal_A[0], X_personal_A[1], label=r'Simulated velocity with $A_{TT}$')
-# ax.set_xlabel("Distance [m]")
-# ax.set_ylabel("Velocity [m/s]")
-# ax.legend()
-# fig.text(0.4, 0.02, f"Simulated time = {str(sim_time_personal_A)}, actual time = {str(actual_time)}")
-# plt.show()
-
-
-# Simulate constant power 
-# const_power = 292
-# X_const_power, t_grid_const_power = simulate_sys(len(activity.power)*[const_power], [activity.distance[0], activity.speed[0], w_prime], activity.distance, activity.elevation, params)
-# finish_time_const_power = datetime.timedelta(seconds=round(t_grid_const_power[-1]))
-# w_bal_const_power = utils.w_prime_balance_ode([const_power]*len(t_grid_const_power), t_grid_const_power, params.get('cp'), params.get('w_prime'))
-
-# max_const_power = 303
-# X_max_const_power, t_grid_max_const_power = simulate_sys(len(activity.power)*[max_const_power], [activity.distance[0], activity.speed[0], w_prime], activity.distance, activity.elevation, params)
-# finish_time_max_const_power = datetime.timedelta(seconds=round(t_grid_max_const_power[-1]))
-# w_bal_max_const_power = utils.w_prime_balance_ode([max_const_power]*len(t_grid_max_const_power), t_grid_max_const_power, params.get('cp'), params.get('w_prime'))
-
-
-# fig, ax = plt.subplots(2,1)
-# ax[0].plot(X_const_power[0], X_const_power[1])
-# ax[0].plot(X_max_const_power[0], X_max_const_power[1])
-# ax[0].legend([f"Simulated velocity for P = {const_power}W", f"Simulated velocity for P = {max_const_power}W"])
-# ax[0].set_ylabel("Velocity [m/s]")
-
-# ax[1].plot(X_const_power[0], w_bal_const_power)
-# ax[1].plot(X_max_const_power[0], w_bal_max_const_power)
-# ax[1].legend([f"W'balance for P = {const_power}W", f"W'balance for P = {max_const_power}W"])
-# ax[1].set_ylabel("W'balance [J]")
-# ax[1].set_xlabel("Distance [m]")
-
-# fig.text(0.4, 0.03, f"Finish time for P = {const_power}W is {str(finish_time_const_power)}")
-# fig.text(0.4, 0.01, f"Finish time for P = {max_const_power}W is {str(finish_time_max_const_power)}")
-# plt.show()
-
 # Plot the optimal pacing attempt
-w_bal_ode = w_prime_balance_ode(activity.power, cp, w_prime)
+w_bal_ode = utils.w_prime_balance_ode(activity.power, activity.time, cp, w_prime)
 max_power_constraint = alpha*np.array(w_bal_ode) + cp
 fig, ax = plt.subplots(3,1)
 ax[0].set_title("Optimal pacing attempt")

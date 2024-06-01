@@ -41,19 +41,14 @@ def simulate_sys(power, x0, distance, elevation, params):
                 (1/x[1] * 1/(m + Iw/r**2)) * (eta*interpolated_power(x[0]) - mu(x[0])*m*g*x[1] - m*g*interpolated_slope(x[0])*x[1] - b0*x[1] - b1*x[1]**2 - 0.5*Cd*rho*A*x[1]**3),
                 utils.smooth_w_balance_ode_derivative(interpolated_power(x[0]), cp, x, w_prime)) 
 
-
-
     N = round(distance[-1])*2
 
     dt = 0.1 
     t0 = 0
     x = ca.MX.sym('x', 3) 
-
     f = system_dynamics(x)  
     ode = {'x': x, 'ode': f}  
-
     F = ca.integrator('F', 'rk', ode, t0, dt)   
-
     X = np.zeros((3, N))
 
     X[:,0] = x0
@@ -63,7 +58,6 @@ def simulate_sys(power, x0, distance, elevation, params):
         res = F(x0=X[:,k])
         X[:,k+1] = res['xf'].full().flatten() 
         t_grid.append(k*dt) 
-
     
     end_index = np.argwhere(np.array(X[0,:]) >= distance[-1])[0][0]
     return X[:,0:end_index], t_grid[:end_index]
@@ -136,5 +130,5 @@ def create_initialization(time, x0, distance, elevation, params):
             lower_bound = slope_const
 
         end_index = np.argwhere(np.array(X[0,:]) >= distance[-1])[0][0]
-    #print("Slope constant is ", slope_const)
+
     return X[:,:end_index], power[:end_index], t_grid[:end_index]

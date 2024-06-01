@@ -182,7 +182,6 @@ for key in routes_dict:
             print("found two point at the same distance in ", key, " at distance: ", routes_dict[key]['distance'][i])
             routes_dict[key]['distance'][i+1] = routes_dict[key]['distance'][i] + 0.1
 
-routes_dict['Two Bridges Loop']['lead_in'] = 180
 
 import json
 with open('routes.json', 'w') as file:
