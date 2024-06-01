@@ -14,7 +14,7 @@ with open('routes.json', 'r') as file:
     routes_dict = json.load(file)
 
 opt_result = {}
-with open('opt_results_json/optimal_pacing_reopt.json', 'r') as f:
+with open('opt_results/optimal_pacing_reopt.json', 'r') as f:
     opt_result = json.load(f)
 
 activity = ActivityReader("cobbled_climbs_optimal_pacing_with_reopt.tcx")

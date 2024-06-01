@@ -14,7 +14,7 @@ with open('routes.json', 'r') as file:
     routes_dict = json.load(file)
 
 opt_result = {}
-with open('opt_results_json/optimal_pacing_attempt.json', 'r') as f:
+with open('opt_results/optimal_pacing_attempt.json', 'r') as f:
     opt_result = json.load(f)
 
 
